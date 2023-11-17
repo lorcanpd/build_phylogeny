@@ -1,0 +1,5 @@
+{
+  "ncores": 1,
+  "snv_rho": true,
+  "indel_rho": 0.15
+}
