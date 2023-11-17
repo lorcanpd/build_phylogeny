@@ -103,6 +103,7 @@ read_json_params <- function(json_file, default_params) {
 
     file_params <- enforce_types(file_params, default_params)
 
+
     # Combine default parameters with file parameters
     # File parameters override default parameters if they exist
     combined_params <- modifyList(default_params, file_params)
