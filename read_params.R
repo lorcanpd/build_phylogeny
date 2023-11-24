@@ -66,11 +66,15 @@ default_params <- list(
     vaf_treshold_mixmodel = 0.3
 )
 
+# TODO: Add something to deal with when NR and NV matrices are not supplied and
+#  cgpvaf_output is used instead as can be a list when default type is
+#  character.
+
 # Function to check and enforce types
-enforce_types <- function(params, default_params) {
+enforce_types <- function(params, default_params = default_params) {
     for (param_name in names(params)) {
         if (param_name %in% names(default_params)) {
-          # Check if types match
+            # Check if types match
             if (
                 class(params[[param_name]]) != class(default_params[[param_name]])
             ) {
@@ -91,11 +95,16 @@ enforce_types <- function(params, default_params) {
     return(params)
 }
 
+if(is.null(opt$exclude_samples)) {samples_exclude=NULL} else {samples_exclude=unlist(strsplit(x=opt$exclude_samples,split = ","))}
+if(is.null(opt$cnv_samples)) {samples_with_CNVs=NULL} else {samples_with_CNVs=unlist(strsplit(x=opt$cnv_samples,split = ","))}
+if(is.null(opt$cgpvaf_output)) {cgpvaf_paths=NULL} else {cgpvaf_paths=unlist(strsplit(x=opt$cgpvaf_output,split = ","))}
+
+
 # TODO: Remove some default values? Would we rather pipeline throw an error
 #  rather than run?
-read_json_params <- function(json_file, default_params) {
+read_json_params <- function(json_file, default_params = default_params) {
     # Read parameters from JSON file
-    if(file.exists(json_file)) {
+    if (file.exists(json_file)) {
         file_params <- fromJSON(json_file)
     } else {
         file_params <- list()
@@ -107,5 +116,33 @@ read_json_params <- function(json_file, default_params) {
     # Combine default parameters with file parameters
     # File parameters override default parameters if they exist
     combined_params <- modifyList(default_params, file_params)
+
+    if (is.null(combined_params$input_nv) & is.null(combined_params$input_nr) & is.null(combined_params$cgpvaf_output)) {
+        stop("No input NV/NR matrices or CGPVaf output files provided.")
+    }
+    # TODO: Make this simpler by overwriting exclude_samples rather than
+    #  creating a new variable.
+    if (!nzchar(params$exclude_samples)) {
+        params$samples_exclude <- ""
+    } else {
+        params$samples_exclude <- unlist(
+            strsplit(x=params$exclude_samples, split = ",")
+        )
+    }
+    if (!nzchar(params$cnv_samples)) {
+        params$samples_with_CNVs <- ""
+    } else {
+        params$samples_with_CNVs <- unlist(
+            strsplit(x=params$cnv_samples, split = ",")
+        )
+    }
+    if (!nzchar(params$cgpvaf_output)) {
+        params$cgpvaf_paths <- ""
+    } else {
+        params$cgpvaf_paths <- unlist(
+            strsplit(x=params$cgpvaf_output, split = ",")
+        )
+    }
+
     return(combined_params)
 }

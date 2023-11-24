@@ -1,3 +1,8 @@
 {
-  
+    "input_nr": "../md39/Blood_Analysis_No_Filtering/Mixture_Modelling_False/Plot_Spectra_T1/NR_input.txt",
+    "input_nv": "../md39/Blood_Analysis_No_Filtering/Mixture_Modelling_False/Plot_Spectra_T1/NV_input.txt",
+    "mpboot_path": "/lustre/scratch126/casm/team274sb/tc16/Programs/mpboot-sse-1.1.0-Linux/bin/",
+    "plot_spectra": false,
+    "max_muts_plot": 100000,
+    "mix_model": false
 }

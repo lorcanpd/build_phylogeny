@@ -1,4 +1,4 @@
-
+sour
 if(!require("optparse", character.only=T,quietly = T, warn.conflicts = F)){
   install.packages("optparse")
   library("optparse", character.only=T,quietly = T, warn.conflicts = F)
@@ -469,19 +469,19 @@ if(!is.null(cgpvaf_paths)){
   }
 }
 
-Muts_coord=matrix(ncol=4,unlist(strsplit(Muts,split="_")),byrow = T)
-if(all(nchar(Muts_coord[,3])==1&nchar(Muts_coord[,4]))==1){
-  mut_id="snv"
-} else{
-  if(all(nchar(Muts_coord[,3])>1|nchar(Muts_coord[,4])>1)){
-    mut_id="indel"
-  } else{
-    mut_id="both"
+Muts_coord <- matrix(ncol = 4, unlist(strsplit(Muts, split = "_")), byrow = T)
+if (all(nchar(Muts_coord[, 3]) == 1 & nchar(Muts_coord[, 4])) == 1) {
+  mut_id <- "snv"
+} else {
+  if (all(nchar(Muts_coord[, 3]) > 1 | nchar(Muts_coord[, 4]) > 1)) {
+    mut_id <- "indel"
+  } else {
+    mut_id <- "both"
   }
 }
 print(paste0("Mutations in data:", mut_id))
 
-XY_chromosomal = grepl("X|Y",Muts)
+XY_chromosomal = grepl("X|Y", Muts)
 autosomal = !XY_chromosomal
 xy_depth=mean(rowMeans(NR[XY_chromosomal,]))
 autosomal_depth=mean(rowMeans(NR[autosomal,]))
