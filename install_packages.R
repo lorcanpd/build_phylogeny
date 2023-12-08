@@ -4,13 +4,13 @@ if (as.character(getRversion()) != "4.1.3") {
 }
 
 # set CRAN mirror to London
-options(repos = c(CRAN = "https://cran.ma.imperial.ac.uk/"))
+options(repos = c(CRAN = "https://cran.rstudio.com/"))
 
 # Install specific versions of CRAN packages
 install_version <- function(package, version) {
     # Check if devtools is installed, if not install it
     if (!requireNamespace("devtools", quietly = TRUE)) {
-        install.packages("devtools")
+        install.packages("devtools", dependencies = TRUE, verbose = TRUE)
     }
 
     # Use devtools to install specific version
@@ -112,6 +112,7 @@ package_versions <- c(
     # dqrng = "0.3.0",
     # ellipsis = "0.3.2",
     # evaluate = "0.15",
+    extraDistr = "1.10.0",
     # fansi = "1.0.3",
     # farver = "2.1.0",
     # fastmap = "1.1.0",
@@ -177,6 +178,7 @@ package_versions <- c(
     # nnet = "7.3-17",
     # openssl = "2.0.1",
     # parallel = "4.1.3",
+    doParallel = "1.0.16",
     # parallelly = "1.31.1",
     # patchwork = "1.1.1",
     # pbapply = "1.5-0",

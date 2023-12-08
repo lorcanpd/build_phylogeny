@@ -2,3 +2,10 @@ check_env.R
 submit_check_env.sh
 clear_packages.R
 installed_packages_backup.csv
+Dockerfile.dev
+unit_tests/NV_dummy.txt
+unit_tests/NR_dummy.txt
+reanalysis.R
+functions.R
+old_build_phylogeny.R
+compare_muts_between_samples.R

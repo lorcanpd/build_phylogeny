@@ -7,41 +7,41 @@ if(!require("optparse", character.only=T,quietly = T, warn.conflicts = F)){
 # Input options
 #----------------------------------
 option_list = list(
-  make_option(c("-i", "--donor_id"), action="store", default='Patient', type='character', help="Patient/donor ID to add to names of output files"),
-  make_option(c("-v", "--input_nv"), action="store", default=NULL, type='character', help="Input NV matrix (rows are variants, columns are samples)"),
-  make_option(c("-r", "--input_nr"), action="store", default=NULL, type='character', help="Input NR matrix (rows are variants, columns are samples)"),
-  make_option(c("-c", "--cgpvaf_output"), action="store", default=NULL, type='character', help="CGPVaf output file, instead of NR/NV matrices - can be multiple files, i.e. indel and snv data for the same donor (comma-separated)"),
-  make_option(c("-o", "--output_dir"), action="store", default="", type='character', help="Output directory for files"),
-  make_option(c("-b", "--beta_binom_shared"), action="store", default=T, type='logical', help="Only run beta-binomial filter on shared mutations. If FALSE, run on all mutations, before germline/depth filtering"),
-  make_option(c("-n", "--ncores"), action="store", default=1, type='numeric', help="Number of cores to use for the beta-binomial step"),
-   make_option(c("--normal_flt"), action="store", default='PDv37is', type='character', help="Name of the dummy normal to exclude from cgpVAF output"),
-  make_option(c("--snv_rho"), action="store", default=0.1, type='numeric', help="Rho value threshold for SNVs"),
-  make_option(c("--indel_rho"), action="store", default=0.15, type='numeric', help="Rho value threshold for indels"),
-  make_option(c("--min_cov"), action="store", default=10, type='numeric', help="Lower threshold for mean coverage across variant site"),
-  make_option(c("--max_cov"), action="store", default=500, type='numeric', help="Upper threshold for mean coverage across variant site"),
-  make_option(c("--only_snvs"), action="store", default=T, type='logical',
-              help="If indel file is provided, only use SNVs to construct the tree (indels will still be mapped to branches)"),
-  make_option(c("--split_trees"), action="store", default=T, type='logical', help="If both indels and SNVs are provided, plot trees separately for each."),
-  make_option(c("--keep_ancestral"), action="store", default=F, type='logical', help="Keep an ancestral branch in the phylogeny for mutation mapping"),
-  make_option(c("-x","--exclude_samples"), action="store", default=NULL, type='character', help="Option to manually exclude certain samples from the analysis, separate with a comma"),
-  make_option(c("--cnv_samples"), action="store", default=NULL, type='character', help="Samples with CNVs, exclude from germline/depth-based filtering, separate with a comma"),
-  make_option(c("--vaf_absent"), action="store", default=0.1, type='numeric', help="VAF threshold (autosomal) below which a variant is absent"),
-  make_option(c("--vaf_present"), action="store", default=0.3, type='numeric', help="VAF threshold (autosomal) above which a variant is present"),
-  make_option(c("-m", "--mixmodel"), action="store", default=F, type='logical', help="Use a binomial mixture model to filter out non-clonal samples?"),
-  make_option(c("-t", "--tree_mut_pval"), action="store", default=0.01, type='numeric', help="Pval threshold for treemut's mutation assignment"),
-  make_option(c("-g", "--genotype_conv_prob"), action="store", default=F, type='logical', help="Use a binomial mixture model to filter out non-clonal samples?"),
-  make_option(c("-p", "--min_pval_for_true_somatic"), action="store", default=0.05, type='numeric', help="Pval threshold for somatic presence if generating a probabilistic genotype matrix"),
-  make_option(c("--min_variant_reads_shared"), action="store", default=2, type='numeric', help="Minimum variant reads used in generating a probabilistic genotype matrix"),
-  make_option(c("--min_vaf_shared"), action="store", default=2, type='numeric', help="Minimum VAF used in generating a probabilistic genotype matrix"),
-  make_option(c("--create_multi_tree"), action="store", default=T, type='logical', help="Convert dichotomous tree from MPBoot to polytomous tree"),
-  make_option(c("--mpboot_path"), action="store", default="", type='character', help="Path to MPBoot executable"),
-  make_option(c("--treemut_path"), action="store", default="/lustre/scratch117/casm/team268/tc16/Scripts/TreeAssign/treemut.R", type='character', help="Path to treemut.R"),
-  make_option(c("--germline_cutoff"), action="store", default=-5, type='numeric', help="Log10 of germline qval cutoff"),
-  make_option(c("--genomeFile"), action="store", default="/nfs/cancer_ref01/Homo_sapiens/37/genome.fa", type='character', help="Reference genome fasta for plotting mutational spectra"),
-  make_option(c("--plot_spectra"), action="store", default=F, type='logical', help="Plot mutational spectra?"),
-  make_option(c("--max_muts_plot"), action="store", default=5000, type='numeric', help="Maximum number of SNVs to plot in mutational spectra"),
-  make_option(c("--VAF_treshold_mixmodel"), action="store", default=0.3, type='numeric', help="VAF threshold for the mixture modelling step to consider a sample clonal")
-  )
+    make_option(c("-i", "--donor_id"), action="store", default='Patient', type='character', help="Patient/donor ID to add to names of output files"),
+    make_option(c("-v", "--input_nv"), action="store", default=NULL, type='character', help="Input NV matrix (rows are variants, columns are samples)"),
+    make_option(c("-r", "--input_nr"), action="store", default=NULL, type='character', help="Input NR matrix (rows are variants, columns are samples)"),
+    make_option(c("-c", "--cgpvaf_output"), action="store", default=NULL, type='character', help="CGPVaf output file, instead of NR/NV matrices - can be multiple files, i.e. indel and snv data for the same donor (comma-separated)"),
+    make_option(c("-o", "--output_dir"), action="store", default="", type='character', help="Output directory for files"),
+    make_option(c("-b", "--beta_binom_shared"), action="store", default=T, type='logical', help="Only run beta-binomial filter on shared mutations. If FALSE, run on all mutations, before germline/depth filtering"),
+    make_option(c("-n", "--ncores"), action="store", default=1, type='numeric', help="Number of cores to use for the beta-binomial step"),
+    make_option(c("--normal_flt"), action="store", default='PDv37is', type='character', help="Name of the dummy normal to exclude from cgpVAF output"),
+    make_option(c("--snv_rho"), action="store", default=0.1, type='numeric', help="Rho value threshold for SNVs"),
+    make_option(c("--indel_rho"), action="store", default=0.15, type='numeric', help="Rho value threshold for indels"),
+    make_option(c("--min_cov"), action="store", default=10, type='numeric', help="Lower threshold for mean coverage across variant site"),
+    make_option(c("--max_cov"), action="store", default=500, type='numeric', help="Upper threshold for mean coverage across variant site"),
+    make_option(c("--only_snvs"), action="store", default=T, type='logical',
+                help="If indel file is provided, only use SNVs to construct the tree (indels will still be mapped to branches)"),
+    make_option(c("--split_trees"), action="store", default=T, type='logical', help="If both indels and SNVs are provided, plot trees separately for each."),
+    make_option(c("--keep_ancestral"), action="store", default=F, type='logical', help="Keep an ancestral branch in the phylogeny for mutation mapping"),
+    make_option(c("-x","--exclude_samples"), action="store", default=NULL, type='character', help="Option to manually exclude certain samples from the analysis, separate with a comma"),
+    make_option(c("--cnv_samples"), action="store", default=NULL, type='character', help="Samples with CNVs, exclude from germline/depth-based filtering, separate with a comma"),
+    make_option(c("--vaf_absent"), action="store", default=0.1, type='numeric', help="VAF threshold (autosomal) below which a variant is absent"),
+    make_option(c("--vaf_present"), action="store", default=0.3, type='numeric', help="VAF threshold (autosomal) above which a variant is present"),
+    make_option(c("-m", "--mixmodel"), action="store", default=F, type='logical', help="Use a binomial mixture model to filter out non-clonal samples?"),
+    make_option(c("-t", "--tree_mut_pval"), action="store", default=0.01, type='numeric', help="Pval threshold for treemut's mutation assignment"),
+    make_option(c("-g", "--genotype_conv_prob"), action="store", default=F, type='logical', help="Use a binomial mixture model to filter out non-clonal samples?"),
+    make_option(c("-p", "--min_pval_for_true_somatic"), action="store", default=0.05, type='numeric', help="Pval threshold for somatic presence if generating a probabilistic genotype matrix"),
+    make_option(c("--min_variant_reads_shared"), action="store", default=2, type='numeric', help="Minimum variant reads used in generating a probabilistic genotype matrix"),
+    make_option(c("--min_vaf_shared"), action="store", default=2, type='numeric', help="Minimum VAF used in generating a probabilistic genotype matrix"),
+    make_option(c("--create_multi_tree"), action="store", default=T, type='logical', help="Convert dichotomous tree from MPBoot to polytomous tree"),
+    make_option(c("--mpboot_path"), action="store", default="", type='character', help="Path to MPBoot executable"),
+    make_option(c("--treemut_path"), action="store", default="/lustre/scratch117/casm/team268/tc16/Scripts/TreeAssign/treemut.R", type='character', help="Path to treemut.R"),
+    make_option(c("--germline_cutoff"), action="store", default=-5, type='numeric', help="Log10 of germline qval cutoff"),
+    make_option(c("--genomeFile"), action="store", default="/nfs/cancer_ref01/Homo_sapiens/37/genome.fa", type='character', help="Reference genome fasta for plotting mutational spectra"),
+    make_option(c("--plot_spectra"), action="store", default=F, type='logical', help="Plot mutational spectra?"),
+    make_option(c("--max_muts_plot"), action="store", default=5000, type='numeric', help="Maximum number of SNVs to plot in mutational spectra"),
+    make_option(c("--VAF_treshold_mixmodel"), action="store", default=0.3, type='numeric', help="VAF threshold for the mixture modelling step to consider a sample clonal")
+)
 opt = parse_args(OptionParser(option_list=option_list, add_help_option=T))
 
 print(opt)
@@ -95,7 +95,7 @@ for(package in cran_packages){
   }
 }
 if (!require("BiocManager", quietly = T, warn.conflicts = F))
-  install.packages("BiocManager")
+    install.packages("BiocManager")
 for(package in bioconductor_packages){
   if(!require(package, character.only=T,quietly = T, warn.conflicts = F)){
     BiocManager::install(as.character(package))
@@ -504,7 +504,7 @@ filter_df$Mean_Depth=rowMeans(NR[,noCNVs])
 # Filter out variant sites with high and low depth across samples
 if(gender=='male'){
   filter_df$Depth_filter = (rowMeans(NR[,noCNVs])>min_cov&rowMeans(NR[,noCNVs])<max_cov&autosomal)|
-    (rowMeans(NR[,noCNVs])>(min_cov/2)&rowMeans(NR[,noCNVs])<(max_cov/2)&XY_chromosomal)
+      (rowMeans(NR[,noCNVs])>(min_cov/2)&rowMeans(NR[,noCNVs])<(max_cov/2)&XY_chromosomal)
 }else{
   filter_df$Depth_filter = rowMeans(NR)>min_cov&rowMeans(NR)<max_cov
 }
@@ -517,9 +517,9 @@ filter_df$Germline=as.numeric(log10(germline_qval)<germline_cutoff)
 if(beta_binom_shared){
   print("Running beta-binomial on shared mutations...")
   NR_flt=NR[filter_df$Germline&
-              filter_df$Depth_filter,]
+                filter_df$Depth_filter,]
   NV_flt=NV[filter_df$Germline&
-              filter_df$Depth_filter,]
+                filter_df$Depth_filter,]
 
   NR_flt_nonzero=NR_flt
   NR_flt_nonzero[NR_flt_nonzero==0]=1
@@ -627,67 +627,81 @@ if(plot_spectra){
 #----------------------------------
 print("Constructing a fasta file...")
 
-NR_flt_nonzero=NR_filtered
-NR_flt_nonzero[NR_flt_nonzero==0]=1
-XY_chromosomal=grepl("X|Y",rownames(NR_filtered))
-autosomal=!XY_chromosomal
+NR_flt_nonzero = NR_filtered
+NR_flt_nonzero[NR_flt_nonzero == 0] = 1
+XY_chromosomal = grepl("X|Y", rownames(NR_filtered))
+autosomal = !XY_chromosomal
 
-if(genotype_conv_prob){
-  pval_matrix=binom_pval_matrix(NR=NR_filtered, NV=NV_filtered,gender=gender)
-  if(!is.na(min_variant_reads_SHARED)) {min_variant_reads_mat <- NV_filtered >= min_variant_reads_SHARED} else {min_variant_reads_mat=1}
-  if(!is.na(min_pval_for_true_somatic_SHARED)) {min_pval_for_true_somatic_mat <- pval_matrix > min_pval_for_true_somatic_SHARED} else {min_pval_for_true_somatic_mat=1}
-  if(!is.na(min_vaf_SHARED[1]) & gender=="female") {
-    min_vaf_mat <- NV_filtered/NR_flt_nonzero>min_vaf_SHARED[1]
-  } else if(!is.na(min_vaf_SHARED) & gender=="male") {
-    min_vaf_mat=matrix(0,ncol=ncol(NV_filtered),nrow=nrow(NV_filtered))
-    min_vaf_mat[XY_chromosomal,]=NV_filtered[XY_chromosomal,]/NR_flt_nonzero[XY_chromosomal,] > min_vaf_SHARED[2]
-    min_vaf_mat[autosomal,]=NV_filtered[autosomal,]/NR_flt_nonzero[!autosomal,] > min_vaf_SHARED[1]
-  } else {min_vaf_mat=1}
-  genotype_bin = min_variant_reads_mat * min_pval_for_true_somatic_mat * min_vaf_mat
-  #Select the "not sure" samples by setting genotype to 0.5.  THIS IS THE ONLY SLIGHTLY OPAQUE BIT OF THIS FUNCTION - SET EMPIRICALLY FROM EXPERIMENTATION.
-  genotype_bin[NV_filtered > 0 & pval_matrix > 0.01 & genotype_bin != 1] <- 0.5 #If have any mutant reads, set as "?" as long as p-value > 0.01
-  genotype_bin[NV_filtered >= 3 & pval_matrix > 0.001 & genotype_bin != 1] <- 0.5 #If have high numbers of mutant reads, should set as "?" even if incompatible p-value (may be biased sequencing)
-  genotype_bin[(NV_filtered == 0) & (pval_matrix > 0.05)] <- 0.5 #Essentially if inadequate depth to exclude mutation, even if no variant reads
-  write.table(pval_matrix,paste0(output_dir,patient_ID,"_",mut_id,"_filtered_binom_pval_mat.txt"))
-}else{
-  genotype_bin=as.matrix(NV_filtered/NR_flt_nonzero)
-  if(gender=="male"){
-    genotype_bin[autosomal,][genotype_bin[autosomal,]<VAF_absent]=0
-    genotype_bin[autosomal,][genotype_bin[autosomal,]>=VAF_present]=1
-    genotype_bin[XY_chromosomal,][genotype_bin[XY_chromosomal,]<(2*VAF_absent)]=0
-    genotype_bin[XY_chromosomal,][genotype_bin[XY_chromosomal,]>=(2*VAF_present)]=1
-    genotype_bin[genotype_bin>0&genotype_bin<1]=0.5
-  }
-  if(gender=="female"){
-    genotype_bin[genotype_bin<VAF_absent]=0
-    genotype_bin[genotype_bin>=VAF_present]=1
-    genotype_bin[genotype_bin>0&genotype_bin<1]=0.5
-  }
+if (genotype_conv_prob) {
+    pval_matrix = binom_pval_matrix(NR = NR_filtered, NV = NV_filtered, gender = gender)
+    if (!is.na(min_variant_reads_SHARED)) {
+        min_variant_reads_mat <- NV_filtered >= min_variant_reads_SHARED
+    } else {
+        min_variant_reads_mat = 1
+    }
+    if (!is.na(min_pval_for_true_somatic_SHARED)) {
+        min_pval_for_true_somatic_mat <- pval_matrix > min_pval_for_true_somatic_SHARED
+    } else {
+        min_pval_for_true_somatic_mat = 1
+    }
+    if (!is.na(min_vaf_SHARED[1]) & gender == "female") {
+        min_vaf_mat <- NV_filtered / NR_flt_nonzero > min_vaf_SHARED[1]
+    } else if (!is.na(min_vaf_SHARED) & gender == "male") {
+        min_vaf_mat = matrix(0, ncol = ncol(NV_filtered), nrow = nrow(NV_filtered))
+        min_vaf_mat[XY_chromosomal,] = NV_filtered[XY_chromosomal,] / NR_flt_nonzero[XY_chromosomal,] > min_vaf_SHARED[2]
+        min_vaf_mat[autosomal,] = NV_filtered[autosomal,] / NR_flt_nonzero[!autosomal,] > min_vaf_SHARED[1]
+    } else { min_vaf_mat = 1 }
+    genotype_bin = min_variant_reads_mat *
+        min_pval_for_true_somatic_mat *
+        min_vaf_mat
+    #Select the "not sure" samples by setting genotype to 0.5.  THIS IS THE ONLY SLIGHTLY OPAQUE BIT OF THIS FUNCTION - SET EMPIRICALLY FROM EXPERIMENTATION.
+    genotype_bin[NV_filtered > 0 &
+                     pval_matrix > 0.01 &
+                     genotype_bin != 1] <- 0.5 #If have any mutant reads, set as "?" as long as p-value > 0.01
+    genotype_bin[NV_filtered >= 3 &
+                     pval_matrix > 0.001 &
+                     genotype_bin != 1] <- 0.5 #If have high numbers of mutant reads, should set as "?" even if incompatible p-value (may be biased sequencing)
+    genotype_bin[(NV_filtered == 0) & (pval_matrix > 0.05)] <- 0.5 #Essentially if inadequate depth to exclude mutation, even if no variant reads
+    write.table(pval_matrix, paste0(output_dir, patient_ID, "_", mut_id, "_filtered_binom_pval_mat.txt"))
+}else {
+    genotype_bin = as.matrix(NV_filtered / NR_flt_nonzero)
+    if (gender == "male") {
+        genotype_bin[autosomal,][genotype_bin[autosomal,] < VAF_absent] = 0
+        genotype_bin[autosomal,][genotype_bin[autosomal,] >= VAF_present] = 1
+        genotype_bin[XY_chromosomal,][genotype_bin[XY_chromosomal,] < (2 * VAF_absent)] = 0
+        genotype_bin[XY_chromosomal,][genotype_bin[XY_chromosomal,] >= (2 * VAF_present)] = 1
+        genotype_bin[genotype_bin > 0 & genotype_bin < 1] = 0.5
+    }
+    if (gender == "female") {
+        genotype_bin[genotype_bin < VAF_absent] = 0
+        genotype_bin[genotype_bin >= VAF_present] = 1
+        genotype_bin[genotype_bin > 0 & genotype_bin < 1] = 0.5
+    }
 }
-present_vars_full=rowSums(genotype_bin>0)>0
+present_vars_full = rowSums(genotype_bin > 0) > 0
 
-if(only_snvs){
-  Muts_coord=matrix(ncol=4,unlist(strsplit(rownames(genotype_bin),split="_")),byrow = T)
-  is.indel=nchar(Muts_coord[,3])>1|nchar(Muts_coord[,4])>1
-  genotype_bin=genotype_bin[!is.indel,]
+if (only_snvs) {
+    Muts_coord = matrix(ncol = 4, unlist(strsplit(rownames(genotype_bin), split = "_")), byrow = T)
+    is.indel = nchar(Muts_coord[, 3]) > 1 | nchar(Muts_coord[, 4]) > 1
+    genotype_bin = genotype_bin[!is.indel,]
 }
 
 #Create dummy fasta consisting of As (WT) and Ts (Mutant)
-Ref = rep("A",nrow(genotype_bin))
-Alt = rep("T",nrow(genotype_bin))
+Ref = rep("A", nrow(genotype_bin))
+Alt = rep("T", nrow(genotype_bin))
 dna_strings = list()
-dna_strings[1]=paste(Ref,sep="",collapse="") #Ancestral sample
-for (n in 1:ncol(genotype_bin)){
-  Mutations = Ref
-  Mutations[genotype_bin[,n]==0.5] = '?'
-  Mutations[genotype_bin[,n]==1] = Alt[genotype_bin[,n]==1]
-  dna_string = paste(Mutations,sep="",collapse="")
-  dna_strings[n+1]=dna_string
+dna_strings[1] = paste(Ref, sep = "", collapse = "") #Ancestral sample
+for (n in 1:ncol(genotype_bin)) {
+    Mutations = Ref
+    Mutations[genotype_bin[, n] == 0.5] = '?'
+    Mutations[genotype_bin[, n] == 1] = Alt[genotype_bin[, n] == 1]
+    dna_string = paste(Mutations, sep = "", collapse = "")
+    dna_strings[n + 1] = dna_string
 }
 
-names(dna_strings)=c("Ancestral",colnames(genotype_bin))
+names(dna_strings) = c("Ancestral", colnames(genotype_bin))
 require(seqinr)
-write.fasta(dna_strings, names=names(dna_strings),paste0(output_dir,patient_ID,"_",mut_id,"_for_MPBoot.fa"))
+write.fasta(dna_strings, names = names(dna_strings), paste0(output_dir, patient_ID, "_", mut_id, "_for_MPBoot.fa"))
 
 #----------------------------------
 # Build tree with MPBoot

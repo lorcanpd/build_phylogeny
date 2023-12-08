@@ -63,7 +63,6 @@ plot_spectrum <- function(
     #     }
     # }
 
-
     # 3. Counting subs
     freqs <- table(
         paste(
@@ -784,7 +783,8 @@ add_ancestral_outgroup <- function(tree, outgroup_name="Ancestral") {
 #     }
 # }
 
-process_cgpvaf_file <- function(file_path, normal_flt, samples_exclude) {
+
+process_cgpvaf_file <- function(params) {
     # Function to process a single cgpvaf output file. This function is used
     # when only a single file is provided in the params file. The function
     # returns a list containing the Muts, NR, and NV objects.
@@ -917,51 +917,6 @@ filter_samples_without_CNVs <- function(data) {
     return(data)
 }
 
-source("read_params.R")
-
-# Read parameters from JSON file
-params <- read_json_params("params.json")
-
-
-print("Reading in data...")
-
-data <- process_data(params)
-# data$Muts data$NR data$NV data$samples
-
-data <- determine_mutation_type(data)
-print(paste0("Type of mutations in data: ", data$mut_id))
-
-data <- determine_gender(data)
-print(paste0("Estimated gender: ", data$gender))
-
-data <- filter_samples_without_CNVs(data)
-
-print("Filtering data")
-
-print("Starting filtering...")
-
-# filter_df <- as.data.frame(
-#     matrix(ncol = 4, unlist(strsplit(rownames(NV), split = "_")), byrow = T)
-# )
-# rownames(filter_df) <- rownames(NV)
-# colnames(filter_df) <- c("Chr", "Pos", "Ref", "Alt")
-#
-# print("Filtering out variants with low or suspiciously high depth...")
-# filter_df$Mean_Depth <- rowMeans(NR[, noCNVs])
-# if (gender == 'male') {
-#     filter_df$Depth_filter <- (
-#         rowMeans(NR[, noCNVs]) > min_cov &
-#         rowMeans(NR[, noCNVs]) < max_cov &
-#         autosomal
-#     ) | (
-#         rowMeans(NR[, noCNVs]) > (min_cov / 2) &
-#         rowMeans(NR[, noCNVs]) < (max_cov / 2) &
-#         XY_chromosomal
-#     )
-# } else {
-#     filter_df$Depth_filter <- (rowMeans(NR) > min_cov & rowMeans(NR) < max_cov)
-# }
-
 # Function to create a filter DataFrame
 create_filter_df <- function(NV) {
     filter_df <- as.data.frame(
@@ -973,7 +928,7 @@ create_filter_df <- function(NV) {
 }
 
 # Function to apply depth filter based on gender
-apply_depth_filter <- function(filter_df, data, params) {
+identify_depth <- function(filter_df, data, params) {
     filter_df$Mean_Depth <- rowMeans(NR[, noCNVs])
     if (data$gender == 'male') {
         filter_df$Depth_filter <- (
@@ -994,23 +949,104 @@ apply_depth_filter <- function(filter_df, data, params) {
     return(filter_df)
 }
 
-# Example usage
-print("Starting filtering...")
+# Function for filtering germline variants
+identify_germline_variants <- function(data, params) {
+    germline_qval <- exact.binomial(
+        gender = data$gender,
+        NV = data$NV[, data$noCNVs],
+        NR = data$NR[, data$noCNVs],
+        qval_return = TRUE
+    )
+    filter_df <- data.frame(
+        Germline_qval = germline_qval,
+        Germline = as.numeric(log10(germline_qval) < params$germline_cutoff)
+    )
+    return(filter_df)
+}
+
+apply_germline_and_depth_filters <- function(data, filter_df) {
+    data$NR_flt <- data$NR[filter_df$Germline & filter_df$Depth_filter, ]
+    data$NV_flt <- data$NV[filter_df$Germline & filter_df$Depth_filter, ]
+    data$NR_flt_nonzero <- data$NR_flt
+    data$NR_flt_nonzero[data$NR_flt_nonzero == 0] <- 1
+    return(data)
+}
+
+get_shared_muts <- function(data) {
+
+    data$shared_muts <- rownames(NV_flt)[rowSums(NV_flt > 0) > 1]
+    return(data)
+}
+
+# Function for estimating rho values
+estimate_rho_values <- function(data, params) {
+
+    if (params$ncores > 1) {
+        data$rho_est <- unlist(mclapply(
+            data$shared_muts, function(x) {
+                estimateRho_gridml(
+                    NR_vec = as.numeric(data$NR_flt_nonzero[x, ]),
+                    NV_vec = as.numeric(data$NV_flt[x, ])
+                )
+            },
+            mc.cores = params$ncores
+        ))
+    } else {
+        data$rho_est <- beta.binom.filter(
+            NR = data$NR_flt_nonzero[shared_muts, ],
+            NV = data$NV_flt[shared_muts, ]
+        )
+    }
+    return(data)
+}
+
+
+source("read_params.R")
+
+# Read parameters from JSON file
+params <- read_json_params("params.json")
+
+
+print("Reading in data...")
+data <- process_data(params)
+# data$Muts data$NR data$NV data$samples
+
+data <- determine_mutation_type(data)
+print(paste0("Type of mutations in data: ", data$mut_id))
+
+data <- determine_gender(data)
+print(paste0("Estimated gender: ", data$gender))
+
+data <- filter_samples_without_CNVs(data)
+
+print("Filtering data")
 filter_df <- create_filter_df(data$NV)
-filter_df <- apply_depth_filter(filter_df, data, params)
+
+print("Identifying variants which fail the depth filter...")
+filter_df <- identify_depth(filter_df, data, params)
+
+print("Identifying likely germline variants...")
+filter_df <- identify_germline_variants(data, params)
+
+data <- apply_germline_and_depth_filters(data, filter_df)
+
+data <- get_shared_muts(data)
+
+if (params$beta_binom_shared) {
+    data <- estimate_rho_values(data, params)
+} else {
+
+}
+
+apply_rho_filter <- function(data, params) {
+
+}
 
 
-print("Filtering out likely germline variants...")
-germline_qval <- exact.binomial(
-    gender = gender, NV = NV[, noCNVs], NR = NR[, noCNVs], qval_return = T
-)
-filter_df$Germline_qval <- germline_qval
-filter_df$Germline <- as.numeric(log10(germline_qval) < germline_cutoff)
-
-if (beta_binom_shared) {
+if (params$beta_binom_shared) {
     print("Running beta-binomial on shared mutations...")
-    NR_flt <- NR[filter_df$Germline & filter_df$Depth_filter, ]
-    NV_flt <- NV[filter_df$Germline & filter_df$Depth_filter, ]
+    NR_flt <- data$NR[filter_df$Germline & filter_df$Depth_filter, ]
+    NV_flt <- data$NV[filter_df$Germline & filter_df$Depth_filter, ]
 
     NR_flt_nonzero <- NR_flt
     NR_flt_nonzero[NR_flt == 0] <- 1
@@ -1027,7 +1063,7 @@ if (beta_binom_shared) {
                     NV_vec = as.numeric(NV_flt[x, ])
                 )
             },
-            mc.cores = ncores
+            mc.cores = params$ncores
         ))
     } else {
         rho_est <- beta.binom.filter(
@@ -1043,13 +1079,13 @@ if (beta_binom_shared) {
     filter_df[shared_muts, "Beta_binomial"] <- 1
 
     # Filter out mutations with rho < threshold
-    if (mut_id == "snv") {
-        flt_rho <- (rho_est < snv_rho)
+    if (data$mut_id == "snv") {
+        data$flt_rho <- (rho_est < snv_rho)
     }
-    if (mut_id == "indel") {
+    if (data$mut_id == "indel") {
         flt_rho <- (rho_est < indel_rho)
     }
-    if (mut_id == "both") {
+    if (data$mut_id == "both") {
         Muts_coord <- matrix(
             ncol = 4, unlist(strsplit(shared_muts, split = "_")), byrow = T
         )
@@ -1071,14 +1107,14 @@ if (beta_binom_shared) {
     print("Running beta-binomial on ALL mutations...")
 
     if (ncores > 1) {
-        rho_est <- unlist(mclapply(1:nrow(NR), function(x) {
+        rho_est <- unlist(mclapply(1:nrow(data$NR), function(x) {
             estimateRho_gridml(
-                NR_vec = as.numeric(NR[x, ]),
-                NV_vec = as.numeric(NV[x, ])
+                NR_vec = as.numeric(data$NR[x, ]),
+                NV_vec = as.numeric(fata$NV[x, ])
             )
         }, mc.cores = ncores))
     } else {
-        rho_est <- beta.binom.filter(NR = NR, NV = NV)
+        rho_est <- beta.binom.filter(NR = data$NR, NV = data$NV)
     }
 
     filter_df$Rho <- rho_est

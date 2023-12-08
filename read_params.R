@@ -40,7 +40,7 @@ default_params <- list(
     vaf_present = 0.3,
     # Use a binomial mixture model to filter out non-clonal samples?
     mixmodel = FALSE,
-    tree_mut_pval = 0.01, # P-value threshold for treemut's mutation assignment
+    treemut_pval = 0.01, # P-value threshold for treemut's mutation assignment
     # Use a binomial mixture model to filter out non-clonal samples?
     genotype_conv_prob = FALSE,
     # P-value threshold for somatic presence if generating a probabilistic
@@ -95,9 +95,9 @@ enforce_types <- function(params, default_params = default_params) {
     return(params)
 }
 
-if(is.null(opt$exclude_samples)) {samples_exclude=NULL} else {samples_exclude=unlist(strsplit(x=opt$exclude_samples,split = ","))}
-if(is.null(opt$cnv_samples)) {samples_with_CNVs=NULL} else {samples_with_CNVs=unlist(strsplit(x=opt$cnv_samples,split = ","))}
-if(is.null(opt$cgpvaf_output)) {cgpvaf_paths=NULL} else {cgpvaf_paths=unlist(strsplit(x=opt$cgpvaf_output,split = ","))}
+# if(is.null(opt$exclude_samples)) {samples_exclude=NULL} else {samples_exclude=unlist(strsplit(x=opt$exclude_samples,split = ","))}
+# if(is.null(opt$cnv_samples)) {samples_with_CNVs=NULL} else {samples_with_CNVs=unlist(strsplit(x=opt$cnv_samples,split = ","))}
+# if(is.null(opt$cgpvaf_output)) {cgpvaf_paths=NULL} else {cgpvaf_paths=unlist(strsplit(x=opt$cgpvaf_output,split = ","))}
 
 
 # TODO: Remove some default values? Would we rather pipeline throw an error
