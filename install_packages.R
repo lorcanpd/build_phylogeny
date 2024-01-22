@@ -138,7 +138,7 @@ package_versions <- c(
     # graphics = "4.1.3",
     # grDevices = "4.1.3",
     # grid = "4.1.3",
-    # gridExtra = "2.3",
+    gridExtra = "2.3",
     # gtable = "0.3.0",
     # gtools = "3.9.2",
     # here = "1.0.1",
@@ -208,6 +208,7 @@ package_versions <- c(
     # RcppEigen = "0.3.3.9.2",
     # RcppProgress = "0.4.2",
     # RcppTOML = "0.1.7",
+    readr = "2.1.4",
     # rematch2 = "2.1.2",
     # remotes = "2.4.2",
     # reshape2 = "1.4.4",
@@ -534,6 +535,7 @@ bioconductor_packages <- c(
     # zip = "2.2.0",
     # zoo = "1.8-10"
 )
+
 
 lapply(
     names(bioconductor_packages),

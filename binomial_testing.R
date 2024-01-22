@@ -18,7 +18,7 @@ create_germline_qval <- function(data, params, sex) {
         NR_sum <- sum(subset$NR)
         has_CNV <- any(subset$has_CNV)
 
-        germline_qval <- if (has_CNV) {
+        germline_qval <- if (NR_sum == 0 || has_CNV) {
             # If the mutation is associated with CNV, assign q-value as 1.
             # This marks them as germline and they will be filtered out
             # later (and will be filtered if they are CNVs anyway).
@@ -68,6 +68,9 @@ create_germline_qval <- function(data, params, sex) {
         results <- mclapply(data_split, process_group, mc.cores = num_cores)
         stopCluster(cl)
     } else {
+        # print(unique(data_split$Sample))
+        # print(paste0("sum NV: ", sum(data_split$NV)))
+        # print(paste0("sum NR: ", sum(data_split$NR)))
         results <- lapply(data_split, process_group)
     }
 

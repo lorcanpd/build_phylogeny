@@ -20,7 +20,7 @@ create_unique_mutations <- function(num_mutations, sex, y_ratio) {
             rep("chrX", times = 5)
         )
     } else {
-        rep("chrX", times = 10)
+        chromosomes <- c(chromosomes, rep("chrX", times = 10))
     }
 
     for (i in 1:num_mutations) {

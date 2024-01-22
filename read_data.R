@@ -13,6 +13,23 @@ for (package in packages) {
 # and outputting a list of dataframes with the following columns:
 # Sample, Chr, Pos, Ref, Alt, NV, NR, VAF, Gene, Depth, Impact, AAchange, Snp, Flag, ID
 
+generate_cgpvaf_paths <- function(project_number, base_directory) {
+    # Construct the base path pattern
+    base_path_pattern <- paste0(base_directory, "/", project_number, "/")
+
+    # List directories (samples) within the base path
+    sample_dirs <- list.dirs(
+        path = base_path_pattern, full.names = TRUE, recursive = FALSE
+    )
+
+    # Generate the full file paths for each sample
+    cgpvaf_paths <- paste0(
+        sample_dirs, "/", basename(sample_dirs), ".caveman_c.flag.vcf.gz"
+    )
+
+    return(cgpvaf_paths)
+}
+
 process_cgpvaf_file <- function(params) {
     # Function to process a single cgpvaf output file. This function is used
     # when only a single file is provided in the params file. The function
@@ -30,6 +47,9 @@ process_cgpvaf_file <- function(params) {
 }
 
 process_multiple_cgpvaf_files <- function(params) {
+    cgpvaf_paths <- generate_cgpvaf_paths(
+        params$project_number, params$base_cgpvaf_dir
+    )
     results <- lapply(
         params$cgpvaf_paths,
         process_cgpvaf_file,
@@ -84,7 +104,7 @@ convert_to_long_table <- function (data) {
 
 
 process_data <- function(params) {
-    if (nzchar(params$cgpvaf_paths)) {
+    if (params$cgpvaf) {
         if (length(params$cgpvaf_paths) == 1) {
             result <- process_cgpvaf_file(params)
         } else {

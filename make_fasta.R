@@ -199,7 +199,7 @@ make_fasta <- function(binary_data, params) {
             collapse = ""
         )
     }
-    browser()
+
     # Write fasta file
     filename <- if (params$only_snvs) {
         paste0(params$output_dir, "/", params$donor_id, "_SNV_for_MPBoot.fa")
