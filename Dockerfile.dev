@@ -60,6 +60,9 @@ RUN pip install jupyter
 
 RUN Rscript -e "install.packages(c('pkgdown', 'systemfonts', 'textshaping', 'ragg'))"
 
+# Install treemut
+RUN Rscript -e "devtools::install_git('https://github.com/NickWilliamsSanger/treemut')"
+
 # Install build_phylogeny
 # Clone build phylogeny repo
 RUN git clone https://github.com/lorcanpd/r_phylogeny.git /tmp/r_phylogeny
@@ -68,8 +71,7 @@ RUN Rscript /tmp/r_phylogeny/install_dependencies.R
 # Install package
 RUN R CMD INSTALL /tmp/r_phylogeny/build_phylogeny
 
-# Install treemut
-RUN Rscript -e "devtools::install_git('https://github.com/NickWilliamsSanger/treemut')"
+
 
 # Install mpboot
 RUN git clone https://github.com/diepthihoang/mpboot.git && \
