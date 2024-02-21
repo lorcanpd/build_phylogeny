@@ -1,7 +1,7 @@
 
 library(extraDistr)
 
-set.seed(123) # Setting a seed for reproducibility
+# set.seed(123) # Setting a seed for reproducibility
 
 create_unique_mutations <- function(num_mutations, sex, y_ratio) {
     # This function creates a vector of mutations, where each mutation is
@@ -128,30 +128,30 @@ generate_nv_nr_data <- function(
 }
 
 
-
-# # TODO use this function to generate data for unit tests
-# # EXAMPLE OF USAGE.
-# # Generate NV and NR data
+#
+# # # TODO use this function to generate data for unit tests
+# # # EXAMPLE OF USAGE.
+# # # Generate NV and NR data
+# # data <- generate_nv_nr_data(
+# #     sex = "male", num_mutations = 2560, num_samples = 8, avg_coverage = 30,
+# #     y_ratio = 0.2
+# # )
+#
 # data <- generate_nv_nr_data(
-#     sex = "male", num_mutations = 2560, num_samples = 8, avg_coverage = 30,
-#     y_ratio = 0.2
+#     sex = "male", num_mutations = 5120, num_samples = 4, avg_coverage = 30,
+#     y_ratio = 0.2, num_subclones = 2, germline_proportion = 0.70,
+#     artefact_proportion = 0.2
 # )
-
-data <- generate_nv_nr_data(
-    sex = "male", num_mutations = 5120, num_samples = 4, avg_coverage = 30,
-    y_ratio = 0.2, num_subclones = 2, germline_proportion = 0.70,
-    artefact_proportion = 0.2
-)
-
-NV <- data$NV
-NR <- data$NR
-
-# Display the first few rows of NV and NR
-head(NV)
-head(NR)
-
-# Save NV and NR matrices to txt file
-write.table(NV, file = "../unit_tests/NV_dummy.txt", sep = "\t", quote = FALSE)
-write.table(NR, file = "../unit_tests/NR_dummy.txt", sep = "\t", quote = FALSE)
+#
+# NV <- data$NV
+# NR <- data$NR
+#
+# # Display the first few rows of NV and NR
+# head(NV)
+# head(NR)
+#
+# # Save NV and NR matrices to txt file
+# write.table(NV, file = "../../unit_tests/NV_dummy.txt", sep = "\t", quote = FALSE)
+# write.table(NR, file = "../../unit_tests/NR_dummy.txt", sep = "\t", quote = FALSE)
 
 
