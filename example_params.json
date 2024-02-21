@@ -1,0 +1,30 @@
+{
+    "input_nr": "/data/NR_input.txt",
+    "input_nv": "/data/NV_input.txt",
+    "donor_id": "TEST",
+    "output_dir": "outputs",
+    "cgpvaf": false,
+    "samples_with_CNVs": [
+        ""
+    ],
+    "min_cov": 10,
+    "max_cov": 500,
+    "ncores": 1,
+    "beta_binom_shared": true,
+    "germline_cutoff": -5,
+    "snv_rho": 0.1,
+    "indel_rho": 0.15,
+    "vaf_absent": 0.1,
+    "vaf_present": 0.3,
+    "vaf_threshold_mixmodel": 0.1,
+    "min_variant_reads_shared": 2,
+    "min_vaf_shared": 2,
+    "genotype_conv_prob": true,
+    "only_snvs": true,
+    "low_vaf_threshold": 0.25,
+    "genome_file": "/data/ref_genome.fa",
+    "mpboot_path": "mpboot-avx",
+    "split_trees": true,
+    "keep_ancestral": false,
+    "treemut_pval": 0.01
+}

@@ -3,7 +3,9 @@ dbinomtrunc <- function(x, size, prob, min_x=4) {
     # Function to calculate truncated binomial probability. x is the number of
     # successes, size is the number of trials, prob is the probability of
     # success, and minx is the minimum number of successes to consider.
-    dbinom(x, size, prob) / pbinom(min_x-0.1, size, prob, lower.tail=FALSE)
+    # dbinom(x, size, prob) / pbinom(min_x-0.1, size, prob, lower.tail=FALSE)
+    denominator <- pbinom(min_x-0.1, size, prob, lower.tail=FALSE) + 1e-8
+    dbinom(x, size, prob) / denominator
 }
 
 estep <- function(x, size, p.vector, prop.vector, ncomp, mode) {
@@ -24,7 +26,7 @@ estep <- function(x, size, p.vector, prop.vector, ncomp, mode) {
     } else {
         dbinom(x_mat, size_mat, prob = p.vector)
     }
-
+    prob_mat <- dbinomtrunc(x_mat, size_mat, prob = p.vector)
     # Multiply by proportions
     p.mat_estep <- prob_mat * prop.vector
 
@@ -99,8 +101,8 @@ em.algo <- function(x, size, prop.vector_inits, p.vector_inits,
         prop_new <- m.step[["prop"]]
         p_new <- m.step[["p"]]
 
-        prev_prop <- prop.vector_inits
-        prev_p <- p.vector_inits
+        # prev_prop <- prop.vector_inits
+        # prev_p <- p.vector_inits
 
         LL.vector <- c(LL.vector, e.step[["LL"]])
         LL_diff <- abs((cur.LL - e.step[["LL"]]))
@@ -112,14 +114,13 @@ em.algo <- function(x, size, prop.vector_inits, p.vector_inits,
         # can appear converged, but the mixture proportions and success
         # probabilities can still oscillate - which is indicative of a local
         # maximum or plateau in the log-likelihood rather than true convergence.
-        if (sqrt(sum((prop_cur - prev_prop)^2)) < tolerance &&
-            sqrt(sum((p_cur - prev_p)^2)) < tolerance &&
-            LL_diff < tolerance) {
+
+        if (LL_diff < tolerance) {
             has_converged <- TRUE
             break
         }
-        prev_prop <- prop_cur
-        prev_p <- p_cur
+        # prev_prop <- prop_cur
+        # prev_p <- p_cur
         # Otherwise continue iteration
         prop_cur <- prop_new
         p_cur <- p_new

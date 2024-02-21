@@ -1,47 +1,14 @@
 
 library(seqinr)
 library(dplyr)
+library(tidyr)
 
-# # Vectorised version of the binom_pval_matrix function below should be faster
-# # using matrix operations instead of for loops.
-# # TODO: test that this produces the same results as the original function and
-# #   is actually faster.
-# binom_pval_matrix <- function(data, sex, qval_return=FALSE) {
-#     # Replace zeros in NR with ones to avoid division by zero
-#     NR[NR == 0] <- 1
-#     # Define the success probability based on gender and chromosome
-#     p_success <- ifelse(
-#         gender == "male" & grepl("X|Y", rownames(NV)),
-#         0.95, 0.5
-#     )
-#
-#     # Apply binomial test across the matrices
-#     pval_mat <- mapply(function(nv, nr, p) {
-#         if (nv > 0 && nr > 0) {
-#             binom.test(nv, nr, p, alternative = "less")$p.value
-#         } else {
-#             1  # Return 1 (or another appropriate value) for invalid or zero counts
-#         }
-#     }, NV, NR, p_success)
-#
-#     # Reshape the output to a matrix with appropriate dimensions and names
-#     pval_mat <- matrix(pval_mat, nrow = nrow(NV), ncol = ncol(NV))
-#     rownames(pval_mat) <- rownames(NV)
-#     colnames(pval_mat) <- colnames(NV)
-#
-#     # Adjust p-values if required
-#     if (qval_return) {
-#         qval_mat <- p.adjust(pval_mat, method = 'BH')
-#         return(qval_mat)
-#     } else {
-#         return(pval_mat)
-#     }
-# }
 
 get_binom_pval <- function(data, sex) {
 
     process_sample <- function (sample_data, sex) {
         sample_data <- sample_data %>%
+            rowwise() %>%
             mutate(
                 binom_pval = case_when(
                     (
@@ -55,9 +22,13 @@ get_binom_pval <- function(data, sex) {
                             sex == "male" & is_XY_chromosomal
                     ) ~ binom.test(NV, NR, 0.95, alternative = "less")$p.value,
                     TRUE ~ 1
-                ),
+                )
+            ) %>%
+            unnest(cols = c(binom_pval)) %>%
+            mutate(
                 binom_qval = p.adjust(binom_pval, method = "BH")
-            )
+            ) %>%
+            ungroup()
 
         return(sample_data)
     }
@@ -105,7 +76,7 @@ create_binary_genotype <- function(data, sex, params) {
                     ),
                     is_true_somatic = ifelse(
                         !is.null(params$min_pval_for_true_somatic_shared),
-                        pval_matrix > params$min_pval_for_true_somatic_shared,
+                        binom_pval > params$min_pval_for_true_somatic_shared,
                         TRUE
                     ),
                     has_sufficient_vaf = case_when(
@@ -135,6 +106,9 @@ create_binary_genotype <- function(data, sex, params) {
                         ) ~ 0.5,
                         (
                             binary_genotype == 0 & NV > 2 & binom_pval > 0.001
+                        ) ~ 0.5,
+                        (
+                            binary_genotype == 0 & binom_pval > 0.05
                         ) ~ 0.5,
                         TRUE ~ 0
                     )

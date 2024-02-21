@@ -151,7 +151,7 @@ head(NV)
 head(NR)
 
 # Save NV and NR matrices to txt file
-write.table(NV, file = "unit_tests/NV_dummy.txt", sep = "\t", quote = FALSE)
-write.table(NR, file = "unit_tests/NR_dummy.txt", sep = "\t", quote = FALSE)
+write.table(NV, file = "../unit_tests/NV_dummy.txt", sep = "\t", quote = FALSE)
+write.table(NR, file = "../unit_tests/NR_dummy.txt", sep = "\t", quote = FALSE)
 
 
