@@ -1,0 +1,103 @@
+FROM rocker/r-ver:4.1.3
+
+LABEL author="lp23"
+
+# Set a non-interactive frontend to avoid interactive prompts during the build
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies for R
+RUN apt-get update && apt-get upgrade -y
+RUN apt-get update && apt-get install -y \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    libharfbuzz-dev \
+    libfribidi-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libcairo2-dev \
+    libtiff5-dev \
+    libudunits2-dev \
+    libgdal-dev \
+    libgeos-dev \
+    libproj-dev \
+    libgmp3-dev \
+    libmpfr-dev \
+    libsodium-dev \
+    libssh2-1-dev \
+    libglpk-dev \
+    libmagick++-dev \
+    libpoppler-cpp-dev \
+    libprotobuf-dev \
+    libbz2-dev \
+    liblzma-dev \
+    libv8-dev \
+    libxt-dev \
+    libicu-dev \
+    zlib1g-dev \
+    libgit2-dev \
+    git \
+    cmake \
+    clang \
+    sed
+
+RUN which sed
+
+# Install Python and pip
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv
+
+# Create virtual environment for installing jupyter
+RUN python3 -m venv /opt/venv
+
+RUN /opt/venv/bin/pip install wheel
+RUN /opt/venv/bin/pip install jupyter
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install jupyter
+
+
+RUN Rscript -e "install.packages(c('pkgdown', 'systemfonts', 'textshaping', 'ragg'))"
+
+# Install build_phylogeny
+# Clone build phylogeny repo
+RUN git clone https://github.com/lorcanpd/r_phylogeny.git /tmp/r_phylogeny
+# Install R packages using script
+RUN Rscript /tmp/r_phylogeny/install_dependencies.R
+# Install package
+RUN R CMD INSTALL /tmp/r_phylogeny/build_phylogeny
+
+# Install treemut
+RUN Rscript -e "devtools::install_git('https://github.com/NickWilliamsSanger/treemut')"
+
+# Install mpboot
+RUN git clone https://github.com/diepthihoang/mpboot.git && \
+    mkdir /mpboot-build && \
+    cd /mpboot-build && \
+    cmake ../mpboot -DIQTREE_FLAGS=avx -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ && \
+    make -j4
+
+# Ensure mpboot executable is in the PATH
+ENV PATH="/mpboot-build:$PATH"
+
+# Clean up the cache to reduce image size
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# add line to ~/.bashrc to indicate LSB_DEFAULT_USERGROUP
+RUN echo "export LSB_DEFAULT_USERGROUP=team274-grp" >> ~/.bashrc
+
+# Create a directory called "data"
+RUN mkdir /data
+
+# Expose the port Jupyter will run on
+EXPOSE 8888
+
+# Set a directory for notebook files
+WORKDIR /usr/src/app
+
+# Start Jupyter Notebook
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--NotebookApp.token=''", "--NotebookApp.password=''"]
+
+
