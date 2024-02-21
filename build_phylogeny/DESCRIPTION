@@ -1,10 +1,9 @@
-Package: build_phylogeny
+Package: buildphylogeny
 Type: Package
 Version: 0.1.0
 Date: 2024-02-21
 Title: Build phylogenies from variant read count matrices.
-Authors@R: person("Lorcán", "Pigott-Dix", email = "lp23@sanger.ac.uk", role = c("aut", "cre"))
-Authors@R: person("Tim", "Coorens", email = "tcoorens@broadinstitute.org", role = c("aut", "cre"))
+Authors@R: c(person("Lorcán", "Pigott-Dix", email = "lp23@sanger.ac.uk", role = c("aut", "cre")), person("Tim", "Coorens", email = "tcoorens@broadinstitute.org", role = c("aut", "cre")))
 Description: This package is designed to build a phylogeny from pairs of variant and total read count matrices (mutation X sample). It is a rewrite of https://github.com/TimCoorens/Sequoia, with a focus on readability, reusability, extensibility and efficiency.
 License: MIT
 Imports:

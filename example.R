@@ -7,7 +7,7 @@
 # custom pipeline which uses the functionality demonstrated here to suit their
 # specific needs.
 
-library(build_phylogeny)
+library(buildphylogeny)
 
 print("Reading data")
 params <- read_json_params("example_params.json")
@@ -179,7 +179,6 @@ rm(filtered_out)
 
 
 print("Fitting binomial mixture models")
-source("build_phylogeny/R/mixture_modelling.R")
 # Currently mixture modellnig can't be done with multiple cores.
 # Probably due to the fact I can only get a notebook with 16 gb RAM.
 params_for_mixmodel <- params
@@ -265,7 +264,6 @@ if (params$only_snvs) {
 
 system(command, ignore.stdout = T)  # TODO Should we ignore stdout?
 
-source("build_phylogeny/R/mapping_trees.R")
 mpboot_out <- paste0(
     params$output_dir, "/",
     params$donor_id, "_SNV_for_MPBoot.fa.treefile"

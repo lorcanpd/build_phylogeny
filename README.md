@@ -17,8 +17,8 @@ Please see `example.R` for an end-to-end example of how to use the package.
 ### Install using `devtools`
 
 ```{R}
-devtools::install_github("lorcanpd/r_phylogeny")
-devtools::install_git('https://github.com/NickWilliamsSanger/treemut')
+devtools::install_github("https://github.com/lorcanpd/r_phylogeny")
+devtools::install_git("https://github.com/NickWilliamsSanger/treemut")
 
 # The following R packages need to be installed using bioconductor after 
 installing this package:
