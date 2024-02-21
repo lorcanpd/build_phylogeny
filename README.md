@@ -1,40 +1,53 @@
-# r_phylogeny
-An updated version of the Behjati lab's R pipeline for creating maximum parsimony phylogenies.
+# build_phylogeny
+This is a rewrite of https://github.com/TimCoorens/Sequoia. It has been modularised and rewritten for readability, re-usability, extensibility, and efficiency.
 
 
-## Dependencies
-The following R packages need to be installed using bioconductor after 
-installing this package:
+## Use
+
+---
+Please see `example.R` for an end-to-end example of how to use the package.
+`example_params.json` contains the parameters used by the example.
+
+
+
+## Installation
+
+---
+
+### Install using `devtools`
 
 ```{R}
+devtools::install_github("lorcanpd/r_phylogeny")
+devtools::install_git('https://github.com/NickWilliamsSanger/treemut')
+
+# The following R packages need to be installed using bioconductor after 
+installing this package:
+
 BiocManager::install("GenomicRanges")
 BiocManager::install("ggtree")
 BiocManager::install("Rsamtools")
 ```
+Followed by:
+```{bash}
+# Install mpboot
+git clone https://github.com/diepthihoang/mpboot.git && \
+    mkdir /mpboot-build && \
+    cd /mpboot-build && \
+    cmake ../mpboot -DIQTREE_FLAGS=avx -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ && \
+    make -j4
 
-
-
-The following exact dependencies were used to develop the pipeline with `R` version 4.1.3:
-- `ape` 5.6-2
-- `optparse` 1.7.3
-- `seqinr` 4.2-16
-- `VGAM` 1.1-7
-- `BiocManager` 1.30.18
-- `data.table` 1.14.2
-- `dplyr` 1.0.9
-- `extraDistr` 1.10.0
-- `ggplot2` 3.3.6
-- `gridExtra` 2.3
-- `MASS` 7.3-55
-- `doParallel` 1.0.16
-- `readr` 2.1.4
-- `stringr` 1.4.0
-- `tidyr` 1.2.0
-
-To download and install with the exact versions use the following commands:
+# Ensure mpboot executable is in the PATH
+ENV PATH="/mpboot-build:$PATH"
 ```
+---
+### Cloning the repository
+
+To download and install with the exact dependencies used indevelopment use the following commands:
+```{bash}
 git clone https://github.com/lorcanpd/r_phylogeny.git
 Rscript r_phylogeny/install_dependencies.R
+R CMD INSTALL r_phylogeny/.
 ```
+
 
 
