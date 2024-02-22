@@ -8,6 +8,7 @@
 # specific needs.
 
 library(buildphylogeny)
+library(treemut)
 
 print("Reading data")
 params <- read_json_params("example_params.json")
