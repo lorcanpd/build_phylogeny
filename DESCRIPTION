@@ -23,7 +23,6 @@ Imports:
     gridExtra,
     genomicRanges,
     Rsamtools,
-    treemut,
     ggtree,
     extraDistr,
     VGAM,
