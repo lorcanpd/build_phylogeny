@@ -57,20 +57,47 @@ RUN /opt/venv/bin/pip install jupyter
 ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install jupyter
 
+# Set the CRAN mirror
+RUN Rscript -e "options(repos = list(CRAN = 'https://cloud.r-project.org'))"
 
-RUN Rscript -e "install.packages(c('pkgdown', 'systemfonts', 'textshaping', 'ragg'))"
+RUN Rscript -e "install.packages(c('pkgdown', 'systemfonts', 'textshaping', 'ragg'), dependencies = TRUE)"
+RUN Rscript -e "install.packages('devtools')"
 
-RUN Rscript -e "options(repos = list(CRAN = 'https://cloud.r-project.org')); install.packages('devtools', dependencies = TRUE)"
+RUN Rscript -e "install.packages('readr', dependencies = TRUE)"
+RUN Rscript -e "install.packages('stringr', dependencies = TRUE)"
+RUN Rscript -e "install.packages('tidyr', dependencies = TRUE)"
+RUN Rscript -e "install.packages('jsonlite', dependencies = TRUE)"
+RUN Rscript -e "install.packages('data.table', dependencies = TRUE)"
+RUN Rscript -e "install.packages('magrittr', dependencies = TRUE)"
+RUN Rscript -e "install.packages('tibble', dependencies = TRUE)"
+RUN Rscript -e "install.packages('patchwork', dependencies = TRUE)"
+
+RUN Rscript -e "install.packages('ape', version = '5.6-2', dependencies = TRUE)"
+RUN Rscript -e "install.packages('optparse', version = '1.7.3', dependencies = TRUE)"
+RUN Rscript -e "install.packages('seqinr', version = '4.2-16', dependencies = TRUE)"
+RUN Rscript -e "install.packages('VGAM', version = '1.1-7', dependencies = TRUE)"
+RUN Rscript -e "install.packages('BiocManager', version = '1.30.18', dependencies = TRUE)"
+RUN Rscript -e "install.packages('data.table', version = '1.14.2', dependencies = TRUE)"
+RUN Rscript -e "install.packages('dplyr', version = '1.0.9', dependencies = TRUE)"
+RUN Rscript -e "install.packages('ggplot2', version = '3.3.6', dependencies = TRUE)"
+RUN Rscript -e "install.packages('extraDist', version = '1.10.0', dependencies = TRUE)"
+RUN Rscript -e "install.packages('gridExtra', version = '2.3', dependencies = TRUE)"
+RUN Rscript -e "install.packages('MASS', version = '7.3-55', dependencies = TRUE)"
+RUN Rscript -e "install.packages('doParallel', version = '1.0.16', dependencies = TRUE)"
+
+
+# Install Bioconductor manager and set Bioconductor version
+RUN Rscript -e "BiocManager::install(version = '3.14')"
+
+# Install Bioconductor packages
+RUN Rscript -e "BiocManager::install('GenomicRanges')"
+RUN Rscript -e "BiocManager::install('ggtree')"
+RUN Rscript -e "BiocManager::install('Rsamtools')"
+
 
 RUN Rscript -e "devtools::install_git('https://github.com/NickWilliamsSanger/treemut')"
 
-# Install build_phylogeny
-# Clone build phylogeny repo
-RUN git clone https://github.com/lorcanpd/r_phylogeny.git /tmp/r_phylogeny
-# Install R packages using script
-RUN Rscript /tmp/r_phylogeny/install_dependencies.R
-# Install package
-RUN R CMD INSTALL /tmp/r_phylogeny/build_phylogeny
+RUN Rscript -e "devtools::install_git('https://github.com/lorcanpd/build_phylogeny')"
 
 # Install mpboot
 RUN git clone https://github.com/diepthihoang/mpboot.git && \

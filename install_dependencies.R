@@ -4,7 +4,8 @@ if (as.character(getRversion()) != "4.1.3") {
 }
 
 # set CRAN mirror to London
-options(repos = c(CRAN = "https://cran.rstudio.com/"))
+# options(repos = c(CRAN = "https://cran.rstudio.com/"))
+options(repos = c(CRAN = 'https://cloud.r-project.org'))
 
 # Install specific versions of CRAN packages
 install_version <- function(package, version) {
@@ -47,8 +48,7 @@ package_versions <- c(
     data.table = "1.15.0",
     magrittr = "2.0.3",
     tibble = "3.2.1",
-    patchwork = "1.2.0",
-    doParallel = "1.0.17"
+    patchwork = "1.2.0"
 
 )
 
