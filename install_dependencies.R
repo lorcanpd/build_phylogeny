@@ -42,7 +42,14 @@ package_versions <- c(
     doParallel = "1.0.16",
     readr = "2.1.4",
     stringr = "1.4.0",
-    tidyr = "1.2.0"
+    tidyr = "1.2.0",
+    jsonlite = "1.8.8",
+    data.table = "1.15.0",
+    magrittr = "2.0.3",
+    tibble = "3.2.1",
+    patchwork = "1.2.0",
+    doParallel = "1.0.17"
+
 )
 
 # Install CRAN packages

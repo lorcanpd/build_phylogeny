@@ -24,7 +24,15 @@ Imports:
     doParallel,
     readr,
     stringr,
-    tidyr
+    tidyr,
+    magrittr,
+    tibble,
+    jsonlite,
+    data.table,
+    magrittr,
+    tibble,
+    patchwork,
+    doParallel
 Depends:
     R (>= 4.1.3)
 

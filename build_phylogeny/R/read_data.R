@@ -1,13 +1,12 @@
 
-packages <- c(
-    "data.table", "dplyr", "tidyr", "magrittr", "readr", "stringr", "tibble"
-)
+library(data.table)
+library(dplyr)
+library(tidyr)
+library(magrittr)
+library(readr)
+library(stringr)
+library(tibble)
 
-for (package in packages) {
-    if (!require(package, character.only = TRUE)) {
-        library(package, character.only = TRUE)
-    }
-}
 
 # process files input data, taking in a cgpvaf file or a set of NV/NR matrices
 # and outputting a list of dataframes with the following columns:
@@ -30,6 +29,7 @@ generate_cgpvaf_paths <- function(project_number, base_directory) {
     return(cgpvaf_paths)
 }
 
+
 process_cgpvaf_file <- function(params) {
     # Function to process a single cgpvaf output file. This function is used
     # when only a single file is provided in the params file. The function
@@ -45,6 +45,7 @@ process_cgpvaf_file <- function(params) {
 
     list(Muts = Muts, NR = NR, NV = NV)
 }
+
 
 process_multiple_cgpvaf_files <- function(params) {
     cgpvaf_paths <- generate_cgpvaf_paths(
