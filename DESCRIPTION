@@ -35,4 +35,26 @@ Imports:
     doParallel
 Depends:
     R (>= 4.1.3)
+Imports:
+    parallel,
+    doParallel,
+    jsonlite,
+    data.table,
+    dplyr,
+    tidyr,
+    magrittr,
+    readr,
+    stringr,
+    tibble,
+    ggplot2,
+    gridExtra,
+    genomicRanges,
+    Rsamtools,
+    treemut,
+    ggtree,
+    extraDistr,
+    VGAM,
+    seqinr
+
+
 
