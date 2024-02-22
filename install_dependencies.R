@@ -65,6 +65,7 @@ bioconductor_packages <- c(
     Rsamtools = "2.10.0"
 )
 
+BiocManager::install(version = "3.14")
 
 lapply(
     names(bioconductor_packages),
