@@ -110,7 +110,8 @@ RUN Rscript -e "BiocManager::install('Rsamtools')"
 
 RUN Rscript -e "devtools::install_git('https://github.com/NickWilliamsSanger/treemut')"
 
-RUN Rscript -e "devtools::install_git('https://github.com/lorcanpd/build_phylogeny')"
+RUN Rscript -e "devtools::install_git('https://github.com/lorcanpd/build_phylogeny'); library(buildphylogeny)"
+
 
 # Install mpboot
 RUN git clone https://github.com/diepthihoang/mpboot.git && \

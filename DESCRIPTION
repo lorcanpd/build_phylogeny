@@ -29,6 +29,8 @@ Imports:
     seqinr
 Depends:
     R (>= 4.1.3)
+Remotes:
+    NickWilliamsSanger/treemut
 
 
 
