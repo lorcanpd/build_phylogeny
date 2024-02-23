@@ -1,12 +1,11 @@
 # build_phylogeny
-This is a rewrite of https://github.com/TimCoorens/Sequoia. It has been modularised and rewritten for readability, re-usability, extensibility, and efficiency.
+This is a rewrite of https://github.com/TimCoorens/Sequoia. It has been modularised and rewritten for readability, re-usability, and extensibility. Functions have been rewritten to take advantage of parallel processing for greater efficiency.
 
 
 ## Use
 
 ---
-Please see `example.R` for an end-to-end example of how to use the package.
-`example_params.json` contains the parameters used by the example.
+Please see `example.R` for an end-to-end example of the package being used to construct a phylogeny. `example_params.json` contains the parameters used by the example. The default  parameters (`default_params`) are described inside the `read_params.R` module.
 
 
 
@@ -14,10 +13,25 @@ Please see `example.R` for an end-to-end example of how to use the package.
 
 ---
 
+### Create `Docker` image and convert to `Singularity` image
+
+
+Copy the `Dockerfile.dev` from this repository to a new directory and build the image using the following command:
+
+```{bash}
+docker build --tag build_phylogeny --file Dockerfile.dev .
+```
+Then convert the `Docker` image to a `Singularity` image using the following command:
+
+```{bash}
+singularity build build_phylogeny.sif docker-daemon://build_phylogeny:latest
+```
+
+---
+
 ### Install using `devtools`
 
 ```{R}
-devtools::install_github("https://github.com/lorcanpd/r_phylogeny")
 devtools::install_git("https://github.com/NickWilliamsSanger/treemut")
 
 # The following R packages need to be installed using bioconductor after 
@@ -26,6 +40,8 @@ installing this package:
 BiocManager::install("GenomicRanges")
 BiocManager::install("ggtree")
 BiocManager::install("Rsamtools")
+
+devtools::install_github("https://github.com/lorcanpd/build_phylogeny")
 ```
 Followed by:
 ```{bash}
@@ -40,14 +56,7 @@ git clone https://github.com/diepthihoang/mpboot.git && \
 ENV PATH="/mpboot-build:$PATH"
 ```
 ---
-### Cloning the repository
 
-To download and install with the exact dependencies used indevelopment use the following commands:
-```{bash}
-git clone https://github.com/lorcanpd/r_phylogeny.git
-Rscript r_phylogeny/install_dependencies.R
-R CMD INSTALL r_phylogeny/.
-```
 
 
 
