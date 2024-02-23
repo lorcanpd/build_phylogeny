@@ -10,7 +10,6 @@ library(jsonlite)
 # Function to check and enforce types
 enforce_types <- function(params, default_params) {
 
-
     for (param_name in names(params)) {
         if (param_name %in% names(default_params)) {
             # Check if types match, allowing integers where numerics are expected
@@ -49,7 +48,7 @@ enforce_types <- function(params, default_params) {
 read_json_params <- function(json_file) {
     # Read parameters from JSON file
     if (file.exists(json_file)) {
-        file_params <- fromJSON(json_file)
+        file_params <- jsonlite::fromJSON(json_file)
     } else {
         file_params <- list()
     }
@@ -61,7 +60,7 @@ read_json_params <- function(json_file) {
         input_nr = "", # Input NR matrix (rows are variants, columns are samples)
         # CGPVaf output file, instead of NR/NV matrices - can be multiple files,
         # i.e. indel and snv data for the same donor (comma-separated)
-        cgpvaf_output = "",
+        cgpvaf_output = list(),
         output_dir = "", # Output directory for files
         # Only run beta-binomial filter on shared mutations. If FALSE, run on all
         # mutations, before germline/depth filtering
@@ -82,10 +81,10 @@ read_json_params <- function(json_file) {
         keep_ancestral = FALSE,
         # Option to manually exclude certain samples from the analysis, separate
         # with a comma
-        exclude_samples = "",
+        exclude_samples = list(),
         # Samples with CNVs, exclude from germline/depth-based filtering, separate
         # with a comma
-        cnv_samples = "",
+        cnv_samples = list(),
         # VAF threshold (autosomal) below which a variant is absent
         vaf_absent = 0.1,
         # VAF threshold (autosomal) above which a variant is present
@@ -127,26 +126,25 @@ read_json_params <- function(json_file) {
     }
     # TODO: Make this simpler by overwriting exclude_samples rather than
     #  creating a new variable.
-    if (!nzchar(combined_params$exclude_samples)) {
-        combined_params$samples_exclude <- ""
+    if (length(combined_params$exclude_samples) == 1 &&
+        combined_params$exclude_samples[[1]] == "") {
+        combined_params$samples_exclude <- list(character(0))
     } else {
-        combined_params$samples_exclude <- unlist(
-            strsplit(x=combined_params$exclude_samples, split = ",")
-        )
+            combined_params$samples_exclude <- combined_params$exclude_samples
     }
-    if (!nzchar(combined_params$cnv_samples)) {
-        combined_params$samples_with_CNVs <- ""
+
+    if (length(combined_params$cnv_samples) == 1 &&
+        combined_params$cnv_samples[[1]] == "") {
+        combined_params$samples_with_CNVs <- list(character(0))
     } else {
-        combined_params$samples_with_CNVs <- unlist(
-            strsplit(x=combined_params$cnv_samples, split = ",")
-        )
+            combined_params$samples_with_CNVs <- combined_params$cnv_samples
     }
-    if (!nzchar(combined_params$cgpvaf_output)) {
-        combined_params$cgpvaf_paths <- ""
+
+    if (length(combined_params$cgpvaf_output) == 1 &&
+        combined_params$cgpvaf_output[[1]] == "") {
+        combined_params$cgpvaf_paths <- list(character(0))
     } else {
-        combined_params$cgpvaf_paths <- unlist(
-            strsplit(x=combined_params$cgpvaf_output, split = ",")
-        )
+            combined_params$cgpvaf_paths <- combined_params$cgpvaf_output
     }
 
     return(combined_params)
