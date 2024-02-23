@@ -1,17 +1,18 @@
 # build_phylogeny
 This is a rewrite of https://github.com/TimCoorens/Sequoia. It has been modularised and rewritten for readability, re-usability, and extensibility. Functions have been rewritten to take advantage of parallel processing for greater efficiency.
 
+---
 
 ## Use
 
----
+
 Please see `example.R` for an end-to-end example of the package being used to construct a phylogeny. `example_params.json` contains the parameters used by the example. The default  parameters (`default_params`) are described inside the `read_params.R` module.
 
-
+---
 
 ## Installation
 
----
+
 
 ### Create `Docker` image and convert to `Singularity` image
 
@@ -26,10 +27,13 @@ Then convert the `Docker` image to a `Singularity` image using the following com
 ```{bash}
 singularity build build_phylogeny.sif docker-daemon://build_phylogeny:latest
 ```
+Once the image is created it can be used to run the `build_phylogeny` package.
 
 ---
 
 ### Install using `devtools`
+
+If you'd rather not make a container... 
 
 ```{R}
 devtools::install_git("https://github.com/NickWilliamsSanger/treemut")
