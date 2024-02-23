@@ -8,7 +8,6 @@
 # specific needs.
 
 library(buildphylogeny)
-library(treemut)
 
 print("Reading data")
 params <- read_json_params("example_params.json")
@@ -174,9 +173,9 @@ plot_spectrum_lattice(
 rm(filtered_out)
 
 # Avoid numerical error from dividing by 0.
-# mixture_model_data <- filtered_data %>%
-#     # set NR == 0 to 1
-#     mutate(NR = ifelse(NR == 0, 1, NR))
+mixture_model_data <- filtered_data %>%
+    # set NR == 0 to 1
+    mutate(NR = ifelse(NR == 0, 1, NR))
 
 
 print("Fitting binomial mixture models")
