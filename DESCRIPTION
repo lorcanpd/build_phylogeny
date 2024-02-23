@@ -8,7 +8,8 @@ Maintainer: Lorcán Pigott-Dix <lp23@sanger.ac.uk>
 Description: This package is designed to build a phylogeny from pairs of variant and total read count matrices (mutation X sample). It is a rewrite of https://github.com/TimCoorens/Sequoia, with a focus on readability, reusability, extensibility and efficiency.
 License: GPL-3
 URL: https://github.com/lorcanpd/r_phylogeny
-Imports:
+Depends:
+    R (>= 4.1.3)
     parallel,
     doParallel,
     jsonlite,
@@ -26,11 +27,9 @@ Imports:
     ggtree,
     extraDistr,
     VGAM,
-    seqinr
-Depends:
-    R (>= 4.1.3)
-Remotes:
-    NickWilliamsSanger/treemut
+    seqinr,
+    treemut
+
 
 
 
