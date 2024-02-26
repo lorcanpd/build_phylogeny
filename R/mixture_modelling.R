@@ -297,37 +297,6 @@ get_peak_VAFs <- function (mixture_model_data, mixture_model_results) {
     return(mixture_model_data)
 }
 
-# get_cluster_flags <-function(sample_results, method = "BIC"){
-#     converged_results <- Filter(function(x) x$converged, sample_results)
-#
-#     # If there are no converged results, return NA
-#     # if (length(converged_results) == 0) {
-#     #     return(data.frame(peak_VAF = NA, n_components = NA, BIC = NA))
-#     # }
-#
-#     if (method == "BIC") {
-#             # Select the result with the minimum BIC
-#     best_result <- converged_results[[
-#         which.min(sapply(converged_results, function(x) x$BIC))
-#     ]]
-#     } else if (method == "AIC") {
-#         # Select the result with the minimum number of components
-#         best_result <- converged_results[[
-#             which.min(sapply(converged_results, function(x) x$AIC))
-#         ]]
-#     }
-#
-#     # Convert which cluster to a long format table with sample names row names
-#     # and which cluster as a column
-#     output <- best_result$Which_cluster %>%
-#         as.data.frame() %>%
-#         setNames("Which_cluster") %>%
-#         mutate(Row = row_number())
-#
-#
-#     return(output)
-# }
-
 
 get_cluster_flags <- function(sample_results, method = "BIC") {
     converged_results <- Filter(function(x) x$converged, sample_results)
@@ -360,98 +329,61 @@ get_cluster_flags <- function(sample_results, method = "BIC") {
 }
 
 
-plot_all_mixture_models <- function(
-    mixture_model_data, mixture_model_results, params
-) {
-    # Plot a histogram of the VAF data from mixture_model_data and colour the plot
-    # using the mixture model results which_cluster column
-    # First assign the which cluster column to the mixture_model_data
+plot_all_mixture_models <- function(mixture_model_data, mixture_model_results, params) {
     cluster_flags <- lapply(mixture_model_results, get_cluster_flags)
-
-    cluster_flags <- lapply(
-        names(cluster_flags), function(sample_name) {
-            # Add the sample name as a new column
-            cluster_flags[[sample_name]] %>%
-            mutate(Sample = sample_name)
-        }) %>%
-        bind_rows()
+    cluster_flags <- lapply(names(cluster_flags), function(sample_name) {
+        cluster_flag <- cluster_flags[[sample_name]]
+        cluster_flag$Sample <- sample_name
+        return(cluster_flag)
+    }) %>% bind_rows()
 
     mixture_model_data <- mixture_model_data %>%
+        filter(NV > 0) %>%
         group_by(Sample) %>%
         mutate(Row = row_number()) %>%
         ungroup() %>%
-        left_join(
-            cluster_flags,
-            by = c("Sample", "Row")
-        )
+        left_join(cluster_flags, by = c("Sample", "Row"))
 
-    # For each sample, plot a histogram of the VAF data from mixture_model_data and
-    # colour the plot using the mixture model results Which_cluster column, add a
-    # vertical line at the peak VAF.
+    mixture_model_data$Which_cluster <- factor(mixture_model_data$Which_cluster, levels = 1:3)
 
-    mixture_model_data$Which_cluster <- factor(
-        mixture_model_data$Which_cluster, levels = 1:3
-    )
-    library(ggplot2)
-    pdf(paste0(params$output_dir, "/mixture_model_plots.pdf"))
-    mixture_model_data %>%
-        filter(!is.na(Which_cluster)) %>%
-        ggplot(aes(x = VAF, fill=Which_cluster)) +
-        # colour by which cluster
-        geom_histogram(binwidth = 0.01) +
-        geom_vline(
-            aes(xintercept = peak_VAF),
-            colour = "red",
-            linetype = "dashed",
-            size = 1
-        ) +
-        facet_wrap(~ Sample) +
-        theme_bw()
-        # scale_fill_brewer(palette = "Set3")
+    # Start PDF output
+    pdf(paste0(params$output_dir, "/mixture_model_plots.pdf"), width = 12)
+
+    # Loop over each sample and create plots
+    for (sample in unique(mixture_model_data$Sample)) {
+        sample_data <- mixture_model_data %>% filter(Sample == sample)
+
+        # Create the stacked histogram plot
+        p1 <- ggplot(sample_data, aes(x = VAF, fill = Which_cluster)) +
+            geom_histogram(binwidth = 0.01) +
+            geom_vline(aes(xintercept = peak_VAF), colour = "red", linetype = "dashed", size = 1) +
+            theme_bw() +
+            scale_fill_brewer(palette = "Set3") +
+            theme(legend.position = "none") +
+            ggtitle(paste("Stacked -", sample))
+
+        # Create the overlapping histogram plot
+        # p2 <- ggplot(sample_data, aes(x = VAF, fill = Which_cluster)) +
+        #     # geom_histogram(binwidth = 0.01, position = "identity", alpha = 0.5) +
+        #     geom_histogram(binwidth = 0.01, position = position_dodge(width = 0.01)) +
+        #     geom_vline(aes(xintercept = peak_VAF), colour = "red", linetype = "dashed", size = 1) +
+        #     theme_bw() +
+        #     scale_fill_brewer(palette = "Dark2") +
+        #     ggtitle(paste("Densities -", sample))
+        p2 <- ggplot(sample_data, aes(x = VAF, fill = Which_cluster, color = Which_cluster)) +
+            geom_density(alpha = 0.5, adjust = 1) +  # adjust parameter can be tweaked for smoothing
+            geom_vline(aes(xintercept = peak_VAF), colour = "red", linetype = "dashed", size = 1) +
+            theme_bw() +
+            scale_fill_brewer(palette = "Set3") +
+            scale_color_brewer(palette = "Set3") +  # Ensure outline colors match fill colors
+            ggtitle(paste("Density -", sample)) +
+            theme(legend.position = "right")  # Adjust legend position if needed
+
+
+        # Arrange the two plots side by side for the current sample
+        grid.arrange(p1, p2, ncol = 2)
+    }
+
+    # Close PDF output
     dev.off()
 }
-
-# OLD CODE GENERATES DATA TO CHECK THAT MODEL IS WORKING CORRECTLY, WHICH SEEMS
-# WRONG. SHOULD BE USING REAL DATA TO CHECK THAT THE MODEL IS WORKING CORRECTLY.
-# plot_binom_mix_model <- function(binom_mix_results, params) {
-#
-#     plot_binom_mix_model_sample <- function(sample_data) {
-#         p <- hist(
-#             sample_data$VAF, breaks = 20, plot = FALSE, xlab = "VAF",
-#             xlim = c(0, 1),
-#             col="grey", freq = FALSE, xlabel = "Variant Allele Frequency",
-#             main = paste0(
-#                 "Sample:", unique(sample_data$Sample), " (n=", nrow(data), ")"
-#             )
-#         )
-#         cols <- c("red", "blue", "green", "magenta", "cyan")
-#
-#         y_coord <- max(p$density) - 0.5
-#         y_intv <- y_coord / 5
-#
-#         for (i in 1:binom_mix_results$n) {
-#             depth <- rpois(1, median(sample_data$NR))
-#             simulated_NV <- rbinom(length(depth), depth, binom_mix_results$p[i])
-#             simulated_VAF <- simulated_NV[simulated_NV > 0] / depth
-#             dens <- density(simulated_VAF)
-#             lines(
-#                 dens$x, binom_mix_results$prop[i] * dens$y,  col = cols[i],
-#                 lwd = 2, lty = "dashed"
-#             )
-#             text(
-#                 y=y_coord, x=0.9,
-#                 labels=paste0("p1: ",round(res$p[i],digits=2))
-#             )
-#             segments(
-#                 lwd=2, lty="dashed", col=cols[i], y0=y_coord + y_intv / 4,
-#                 x0=0.85, x1=0.95
-#             )
-#         }
-#         dev.off()
-#     }
-#     num_cores <- ifelse(is.null(params$ncores), 1, params$ncores)
-# }
-
-
-
-
