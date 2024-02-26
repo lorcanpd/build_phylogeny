@@ -208,6 +208,10 @@ plot_data <- function(freqs, sample_name, add_to_title = "") {
 plot_spectrum_lattice <- function(
     data, save, add_to_title = "", by_sample = FALSE
 ) {
+    # Drop columns we don't need.
+    data <- data %>%
+        select(Sample, Muts, Chr, Pos, Ref, Alt, trinuc_ref_py, sub)
+
     if (by_sample) {
         plots <- data %>%
             group_by(Sample) %>%
@@ -218,6 +222,12 @@ plot_spectrum_lattice <- function(
         plot_name <- paste0("plots/spectrum_by_sample", add_to_title, ".pdf")
     } else {
         plots <- list()
+        # group by Muts, chromosome, position, reference, and alternate and drop Sample column.
+        data <- data %>%
+            select(-Sample) %>%
+            group_by(Muts, Chr, Pos, Ref, Alt, trinuc_ref_py, sub) %>%
+            ungroup()
+
         freqs_full <- count_substitutions(data)
 
         plots[[1]] <- plot_data(

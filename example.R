@@ -27,7 +27,8 @@ data <- create_germline_qval(data, params, sex)
 data %>%
     group_by(Sample) %>%
     summarise(
-        num_mutations = n()
+        total_mutations = n(),
+        per_sample_mutations = sum(NV > 0)
     ) %>%
     print()
 
@@ -41,41 +42,48 @@ data %>%
 # possible.
 print("Filtering germline mutations and mutations of insufficient depth")
 # Apply depth and germline filters using params file
-filtered_data <- data %>%
-    # Group by mutation identifier
-    group_by(Muts) %>%
-    # Filter groups where at least one sample in the group passes the filters
-    filter(
-        any(
-            sufficient_depth == TRUE &
-                log10(germline_qval) < params$germline_cutoff
+
+data <- data %>%
+    mutate(
+        NV = ifelse(
+            (sufficient_depth & log10(germline_qval) < params$germline_cutoff),
+            NV, 0
+        ),
+        VAF = ifelse(
+            (sufficient_depth & log10(germline_qval) < params$germline_cutoff),
+            VAF, 0
         )
-    ) %>%
-    # Ungroup to remove the grouping structure
-    ungroup()
+    )
 
 filtered_out <- data %>%
     # Group by mutation identifier
     group_by(Muts) %>%
     # Filter to retain mutations if all samples fail the conditions
     filter(
-        all(
-            sufficient_depth == FALSE |
-                log10(germline_qval) >= params$germline_cutoff
-        )
+        all(VAF == 0)
     ) %>%
     # Ungroup to remove the grouping structure
     ungroup()
 
-filtered_data %>%
+data <- data %>%
+    group_by(Muts) %>%
+    # Filter to retain mutations if all samples fail the conditions
+    filter(
+        any(VAF > 0)
+    ) %>%
+    # Ungroup to remove the grouping structure
+    ungroup()
+
+data %>%
     group_by(Sample) %>%
     summarise(
-        num_mutations = n()
+        total_mutations = n(),
+        per_sample_mutations = sum(NV > 0)
     ) %>%
     print()
 
 plot_spectrum_lattice(
-    filtered_data, TRUE,
+    data, TRUE,
     add_to_title = "_retained_by_depth_germline_filters",
     by_sample = FALSE
 )
@@ -95,40 +103,53 @@ if (params$beta_binom_shared) {
 }
 
 print("Estimating rho (overdispersion) for each mutation")
-filtered_data <- estimate_beta_binomial_rho(filtered_data, params)
+data <- estimate_beta_binomial_rho(data, params)
 
 print("Filtering mutations with high rho")
 
-filtered_out <- filtered_data %>%
-    group_by(Muts) %>%
-    filter(
-        all(
-            (Mutation_Type == "SNV" & rho_estimate >= params$snv_rho) |
-            (Mutation_Type == "indel" & rho_estimate >= params$indel_rho)
-        )
-    ) %>%
-    ungroup()
-
-# Filter out mutations with rho > 0.1 for SNVs and rho > 0.15 for indels
-filtered_data <- filtered_data %>%
-    group_by(Muts) %>%
-    filter(
-        any(
+data <- data %>%
+    mutate(
+        NV = ifelse(
             (Mutation_Type == "SNV" & rho_estimate < params$snv_rho) |
-            (Mutation_Type == "indel" & rho_estimate < params$indel_rho)
+            (Mutation_Type == "indel" & rho_estimate < params$indel_rho),
+            NV, 0
+        ),
+        VAF = ifelse(
+            (Mutation_Type == "SNV" & rho_estimate < params$snv_rho) |
+            (Mutation_Type == "indel" & rho_estimate < params$indel_rho),
+            VAF, 0
         )
+    )
+
+filtered_out <- data %>%
+    # Group by mutation identifier
+    group_by(Muts) %>%
+    # Filter to retain mutations if all samples fail the conditions
+    filter(
+        all(VAF == 0)
     ) %>%
+    # Ungroup to remove the grouping structure
     ungroup()
 
-filtered_data %>%
+data <- data %>%
+    group_by(Muts) %>%
+    # Filter to retain mutations if all samples fail the conditions
+    filter(
+        any(VAF > 0)
+    ) %>%
+    # Ungroup to remove the grouping structure
+    ungroup()
+
+data %>%
     group_by(Sample) %>%
     summarise(
-        num_mutations = n()
+        total_mutations = n(),
+        per_sample_mutations = sum(NV > 0)
     ) %>%
     print()
 
 plot_spectrum_lattice(
-    filtered_data, TRUE,
+    data, TRUE,
     add_to_title = "_retained_by_overdispersion_filter",
     by_sample = FALSE
 )
@@ -142,25 +163,53 @@ rm(filtered_out)
 
 # Filter out non-autosomal mutations and those with fewer than three supporting
 # reads
-filtered_data <- filtered_data %>%
+# filtered_data <- filtered_data %>%
+#     group_by(Muts) %>%
+#     filter(any(!is_XY_chromosomal & NR >= 3)) %>%
+#     ungroup()
+
+data <- data %>%
+    mutate(
+        NV = ifelse(
+            (is_XY_chromosomal | NR < 3),
+            0, NV
+        ),
+        VAF = ifelse(
+            (is_XY_chromosomal | NR < 3),
+            0, VAF
+        )
+    )
+
+filtered_out <- data %>%
+    # Group by mutation identifier
     group_by(Muts) %>%
-    filter(any(!is_XY_chromosomal & NR >= 3)) %>%
+    # Filter to retain mutations if all samples fail the conditions
+    filter(
+        all(VAF == 0)
+    ) %>%
+    # Ungroup to remove the grouping structure
     ungroup()
 
-filtered_out <- filtered_data %>%
+
+data <- data %>%
     group_by(Muts) %>%
-    filter(all(is_XY_chromosomal | NR < 3)) %>%
+    # Filter to retain mutations if all samples fail the conditions
+    filter(
+        any(VAF > 0)
+    ) %>%
+    # Ungroup to remove the grouping structure
     ungroup()
 
-filtered_data %>%
+data %>%
     group_by(Sample) %>%
     summarise(
-        num_mutations = n()
+        total_mutations = n(),
+        per_sample_mutations = sum(NV > 0)
     ) %>%
     print()
 
 plot_spectrum_lattice(
-    filtered_data, TRUE,
+    data, TRUE,
     add_to_title = "_retained_by_autosomal_filter",
     by_sample = FALSE
 )
@@ -173,7 +222,7 @@ plot_spectrum_lattice(
 rm(filtered_out)
 
 # Avoid numerical error from dividing by 0.
-mixture_model_data <- filtered_data %>%
+data <- data %>%
     # set NR == 0 to 1
     mutate(NR = ifelse(NR == 0, 1, NR))
 
@@ -185,27 +234,63 @@ params_for_mixmodel <- params
 params_for_mixmodel$ncores <- 1
 # mixture_model_data, params, tolerance = 1e-6, max_iter = 5000 # Use these parameters.
 mixture_model_results <- fit_binom_mix_model(
-    mixture_model_data, params_for_mixmodel, tolerance = 1e-4, max_iter = 500 # Test perameters
+    data, params_for_mixmodel, tolerance = 1e-4, max_iter = 500 # Test perameters
 )
 print("Finished fitting binomial mixture models")
 
-mixture_model_data <- get_peak_VAFs(mixture_model_data, mixture_model_results)
+data <- get_peak_VAFs(data, mixture_model_results)
 
 # plot_all_mixture_models(mixture_model_results, mixture_model_data)
 
-filtered_mixture_model_data <- mixture_model_data %>%
+# filtered_mixture_model_data <- mixture_model_data %>%
+#     group_by(Muts) %>%
+#     filter(any(peak_VAF > params$vaf_threshold_mixmodel)) %>%
+#     ungroup()
+
+data <- data %>%
+    mutate(
+        NV = ifelse(
+            (VAF > params$vaf_threshold_mixmodel),
+            NV, 0
+        ),
+        VAF = ifelse(
+            (VAF > params$vaf_threshold_mixmodel),
+            VAF, 0
+        )
+    )
+
+
+filtered_out <- data %>%
+    # Group by mutation identifier
     group_by(Muts) %>%
-    filter(any(peak_VAF > params$vaf_threshold_mixmodel)) %>%
+    # Filter to retain mutations if all samples fail the conditions
+    filter(
+        all(VAF == 0)
+    ) %>%
+    # Ungroup to remove the grouping structure
     ungroup()
 
-filtered_out <- mixture_model_data %>%
+
+data <- data %>%
     group_by(Muts) %>%
-    filter(any(peak_VAF <= params$vaf_threshold_mixmodel)) %>%
+    # Filter to retain mutations if all samples fail the conditions
+    filter(
+        any(VAF > 0)
+    ) %>%
+    # Ungroup to remove the grouping structure
     ungroup()
+
+data %>%
+    group_by(Sample) %>%
+    summarise(
+        total_mutations = n(),
+        per_sample_mutations = sum(NV > 0)
+    ) %>%
+    print()
 
 
 plot_spectrum_lattice(
-    filtered_mixture_model_data, TRUE,
+    data, TRUE,
     add_to_title = "_retained_by_mixture_model_filter",
     by_sample = FALSE
 )
@@ -217,17 +302,9 @@ plot_spectrum_lattice(
 )
 rm(filtered_out)
 
-# count the number of mutations per sample
-filtered_mixture_model_data %>%
-    group_by(Sample) %>%
-    summarise(
-        num_mutations = n()
-    ) %>%
-    print()
-
 # SAVE FILTERED DATA TO FILE
 write.table(
-    filtered_mixture_model_data,
+    data,
     file = paste0(
         params$output_dir, "/", params$donor_id, "_final_filtered_data.csv"
     ),
@@ -235,7 +312,7 @@ write.table(
 )
 
 # load from disk
-filtered_mixture_model_data <- read.table(
+data <- read.table(
     file = paste0(
         params$output_dir, "/", params$donor_id, "_final_filtered_data.csv"
     ),
@@ -244,7 +321,7 @@ filtered_mixture_model_data <- read.table(
 
 print("Constructing fasta file")
 almost_binary_genotypes <- create_binary_genotype(
-    filtered_mixture_model_data, sex, params
+    data, sex, params
 )
 make_fasta(almost_binary_genotypes, params)
 
