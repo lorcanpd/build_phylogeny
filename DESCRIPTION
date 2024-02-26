@@ -28,7 +28,8 @@ Depends:
     extraDistr,
     VGAM,
     seqinr,
-    treemut
+    treemut,
+    patchwork
 
 
 
