@@ -219,7 +219,9 @@ plot_spectrum_lattice <- function(
                 freqs_full <- count_substitutions(.)
                 plot_data(freqs_full, unique(sample_data$Sample), add_to_title)
             })
-        plot_name <- paste0("plots/spectrum_by_sample", add_to_title, ".pdf")
+        plot_name <- paste0(
+            params$output_dir, "/spectrum_by_sample", add_to_title, ".pdf"
+        )
     } else {
         plots <- list()
         # group by Muts, chromosome, position, reference, and alternate and drop Sample column.
@@ -233,7 +235,9 @@ plot_spectrum_lattice <- function(
         plots[[1]] <- plot_data(
             freqs_full, "All samples", add_to_title
         )
-        plot_name <- paste0("plots/all_sample_spectra", add_to_title, ".pdf")
+        plot_name <- paste0(
+            params$output_dir, "/all_sample_spectra", add_to_title, ".pdf"
+        )
     }
 
     lattice_plot <- wrap_plots(plots, ncol = 1)  # Adjust ncol as needed

@@ -204,6 +204,8 @@ binomial_mixture <- function(
 fit_binom_mix_model <- function(
     data, params, tolerance=1e-6, max_iteratons=5000, prop_cutoff=0.15
 ) {
+    data <- data %>%
+        filter(NV > 0)
     # Fit a binomial mixture model to the data.
     data_split <- split(data, data$Sample)
 
@@ -243,10 +245,10 @@ process_mixture_model_results <- function(sample_results, method = "BIC") {
     }
 
     if (method == "BIC") {
-            # Select the result with the minimum BIC
-    best_result <- converged_results[[
-        which.min(sapply(converged_results, function(x) x$BIC))
-    ]]
+        # Select the result with the minimum BIC
+        best_result <- converged_results[[
+            which.min(sapply(converged_results, function(x) x$BIC))
+        ]]
     } else if (method == "AIC") {
         # Select the result with the minimum number of components
         best_result <- converged_results[[
@@ -274,36 +276,6 @@ process_mixture_model_results <- function(sample_results, method = "BIC") {
     return(results)
 }
 
-get_cluster_flags <-function(sample_results, method = "BIC"){
-    converged_results <- Filter(function(x) x$converged, sample_results)
-
-    # If there are no converged results, return NA
-    # if (length(converged_results) == 0) {
-    #     return(data.frame(peak_VAF = NA, n_components = NA, BIC = NA))
-    # }
-
-    if (method == "BIC") {
-            # Select the result with the minimum BIC
-    best_result <- converged_results[[
-        which.min(sapply(converged_results, function(x) x$BIC))
-    ]]
-    } else if (method == "AIC") {
-        # Select the result with the minimum number of components
-        best_result <- converged_results[[
-            which.min(sapply(converged_results, function(x) x$AIC))
-        ]]
-    }
-
-    # Convert which cluster to a long format table with sample names row names
-    # and which cluster as a column
-    output <- best_result$Which_cluster %>%
-        as.data.frame() %>%
-        setNames("Which_cluster") %>%
-        mutate(Row = row_number())
-
-
-    return(output)
-}
 
 get_peak_VAFs <- function (mixture_model_data, mixture_model_results) {
     # Get the peak VAF for each sample from the mixture model results
@@ -325,6 +297,69 @@ get_peak_VAFs <- function (mixture_model_data, mixture_model_results) {
     return(mixture_model_data)
 }
 
+# get_cluster_flags <-function(sample_results, method = "BIC"){
+#     converged_results <- Filter(function(x) x$converged, sample_results)
+#
+#     # If there are no converged results, return NA
+#     # if (length(converged_results) == 0) {
+#     #     return(data.frame(peak_VAF = NA, n_components = NA, BIC = NA))
+#     # }
+#
+#     if (method == "BIC") {
+#             # Select the result with the minimum BIC
+#     best_result <- converged_results[[
+#         which.min(sapply(converged_results, function(x) x$BIC))
+#     ]]
+#     } else if (method == "AIC") {
+#         # Select the result with the minimum number of components
+#         best_result <- converged_results[[
+#             which.min(sapply(converged_results, function(x) x$AIC))
+#         ]]
+#     }
+#
+#     # Convert which cluster to a long format table with sample names row names
+#     # and which cluster as a column
+#     output <- best_result$Which_cluster %>%
+#         as.data.frame() %>%
+#         setNames("Which_cluster") %>%
+#         mutate(Row = row_number())
+#
+#
+#     return(output)
+# }
+
+
+get_cluster_flags <- function(sample_results, method = "BIC") {
+    converged_results <- Filter(function(x) x$converged, sample_results)
+
+    # Return an empty dataframe if no results converged
+    if (length(converged_results) == 0) {
+        return(data.frame(Which_cluster = integer(0), Row = integer(0)))
+    }
+
+    best_result_index <- if (method == "BIC") {
+        which.min(sapply(converged_results, function(x) x$BIC))
+    } else if (method == "AIC") {
+        which.min(sapply(converged_results, function(x) x$AIC))
+    } else {
+        stop("Invalid method specified. Choose either 'BIC' or 'AIC'.")
+    }
+
+    best_result <- converged_results[[best_result_index]]
+
+    if (!is.list(best_result) || !"Which_cluster" %in% names(best_result)) {
+        stop("Best result does not contain 'Which_cluster' data.")
+    }
+
+    output <- best_result$Which_cluster %>%
+        as.data.frame() %>%
+        setNames("Which_cluster") %>%
+        mutate(Row = row_number())
+
+    return(output)
+}
+
+
 plot_all_mixture_models <- function(
     mixture_model_data, mixture_model_results, params
 ) {
@@ -332,7 +367,6 @@ plot_all_mixture_models <- function(
     # using the mixture model results which_cluster column
     # First assign the which cluster column to the mixture_model_data
     cluster_flags <- lapply(mixture_model_results, get_cluster_flags)
-
 
     cluster_flags <- lapply(
         names(cluster_flags), function(sample_name) {
@@ -354,17 +388,17 @@ plot_all_mixture_models <- function(
     # For each sample, plot a histogram of the VAF data from mixture_model_data and
     # colour the plot using the mixture model results Which_cluster column, add a
     # vertical line at the peak VAF.
+
+    mixture_model_data$Which_cluster <- factor(
+        mixture_model_data$Which_cluster, levels = 1:3
+    )
     library(ggplot2)
-    pdf(paste0(params$output_dir, "mixture_model_plots.pdf"))
+    pdf(paste0(params$output_dir, "/mixture_model_plots.pdf"))
     mixture_model_data %>%
-        ggplot(aes(x = VAF)) +
+        filter(!is.na(Which_cluster)) %>%
+        ggplot(aes(x = VAF, fill=Which_cluster)) +
         # colour by which cluster
-        geom_histogram(
-            data = . %>% filter(!is.na(Which_cluster)),
-            aes(fill = Which_cluster),
-            binwidth = 0.01,
-            colour = "black"
-        ) +
+        geom_histogram(binwidth = 0.01) +
         geom_vline(
             aes(xintercept = peak_VAF),
             colour = "red",
@@ -373,6 +407,7 @@ plot_all_mixture_models <- function(
         ) +
         facet_wrap(~ Sample) +
         theme_bw()
+        # scale_fill_brewer(palette = "Set3")
     dev.off()
 }
 

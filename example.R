@@ -24,13 +24,8 @@ data <- create_depth_flag(data, params, sex)
 print("Estimating germline q-values")
 data <- create_germline_qval(data, params, sex)
 
-data %>%
-    group_by(Sample) %>%
-    summarise(
-        total_mutations = n(),
-        per_sample_mutations = sum(NV > 0)
-    ) %>%
-    print()
+stats <- get_mutation_stats(data)
+print(stats)
 
 # The germline is then filtered using log10(qval) < log10(0.00001), which
 # represents a q-value of 0.00001. This is equivalent to a p-value of 0.99999.
@@ -74,13 +69,8 @@ data <- data %>%
     # Ungroup to remove the grouping structure
     ungroup()
 
-data %>%
-    group_by(Sample) %>%
-    summarise(
-        total_mutations = n(),
-        per_sample_mutations = sum(NV > 0)
-    ) %>%
-    print()
+stats <- get_mutation_stats(data)
+print(stats)
 
 plot_spectrum_lattice(
     data, TRUE,
@@ -96,9 +86,9 @@ rm(filtered_out)
 
 if (params$beta_binom_shared) {
     print("Flagging shared mutations")
-    filtered_data <- flag_shared_mutations(filtered_data)
+    data <- flag_shared_mutations(data)
     # Estimate rho for each mutation
-    filtered_data <- filtered_data %>%
+    data <- data %>%
         filter(shared == TRUE)
 }
 
@@ -140,13 +130,8 @@ data <- data %>%
     # Ungroup to remove the grouping structure
     ungroup()
 
-data %>%
-    group_by(Sample) %>%
-    summarise(
-        total_mutations = n(),
-        per_sample_mutations = sum(NV > 0)
-    ) %>%
-    print()
+stats <- get_mutation_stats(data)
+print(stats)
 
 plot_spectrum_lattice(
     data, TRUE,
@@ -163,11 +148,6 @@ rm(filtered_out)
 
 # Filter out non-autosomal mutations and those with fewer than three supporting
 # reads
-# filtered_data <- filtered_data %>%
-#     group_by(Muts) %>%
-#     filter(any(!is_XY_chromosomal & NR >= 3)) %>%
-#     ungroup()
-
 data <- data %>%
     mutate(
         NV = ifelse(
@@ -190,7 +170,6 @@ filtered_out <- data %>%
     # Ungroup to remove the grouping structure
     ungroup()
 
-
 data <- data %>%
     group_by(Muts) %>%
     # Filter to retain mutations if all samples fail the conditions
@@ -200,13 +179,8 @@ data <- data %>%
     # Ungroup to remove the grouping structure
     ungroup()
 
-data %>%
-    group_by(Sample) %>%
-    summarise(
-        total_mutations = n(),
-        per_sample_mutations = sum(NV > 0)
-    ) %>%
-    print()
+stats <- get_mutation_stats(data)
+print(stats)
 
 plot_spectrum_lattice(
     data, TRUE,
@@ -226,7 +200,6 @@ data <- data %>%
     # set NR == 0 to 1
     mutate(NR = ifelse(NR == 0, 1, NR))
 
-
 print("Fitting binomial mixture models")
 # Currently mixture modellnig can't be done with multiple cores.
 # Probably due to the fact I can only get a notebook with 16 gb RAM.
@@ -236,29 +209,23 @@ params_for_mixmodel$ncores <- 1
 mixture_model_results <- fit_binom_mix_model(
     data, params_for_mixmodel, tolerance = 1e-4, max_iter = 500 # Test perameters
 )
-print("Finished fitting binomial mixture models")
 
+print("Finished fitting binomial mixture models")
 data <- get_peak_VAFs(data, mixture_model_results)
 
-# plot_all_mixture_models(mixture_model_results, mixture_model_data)
-
-# filtered_mixture_model_data <- mixture_model_data %>%
-#     group_by(Muts) %>%
-#     filter(any(peak_VAF > params$vaf_threshold_mixmodel)) %>%
-#     ungroup()
+plot_all_mixture_models(data, mixture_model_results, params)
 
 data <- data %>%
     mutate(
         NV = ifelse(
-            (VAF > params$vaf_threshold_mixmodel),
+            (peak_VAF > params$vaf_threshold_mixmodel),
             NV, 0
         ),
         VAF = ifelse(
-            (VAF > params$vaf_threshold_mixmodel),
+            (peak_VAF > params$vaf_threshold_mixmodel),
             VAF, 0
         )
     )
-
 
 filtered_out <- data %>%
     # Group by mutation identifier
@@ -270,7 +237,6 @@ filtered_out <- data %>%
     # Ungroup to remove the grouping structure
     ungroup()
 
-
 data <- data %>%
     group_by(Muts) %>%
     # Filter to retain mutations if all samples fail the conditions
@@ -280,14 +246,8 @@ data <- data %>%
     # Ungroup to remove the grouping structure
     ungroup()
 
-data %>%
-    group_by(Sample) %>%
-    summarise(
-        total_mutations = n(),
-        per_sample_mutations = sum(NV > 0)
-    ) %>%
-    print()
-
+stats <- get_mutation_stats(data)
+print(stats)
 
 plot_spectrum_lattice(
     data, TRUE,
@@ -325,7 +285,6 @@ almost_binary_genotypes <- create_binary_genotype(
 )
 make_fasta(almost_binary_genotypes, params)
 
-
 print("Running MPBoot")
 if (params$only_snvs) {
     command <- paste0(
@@ -348,6 +307,6 @@ mpboot_out <- paste0(
 tree <- prepare_tree(mpboot_out, params)
 
 assign_mutations_and_plot(
-    tree, filtered_mixture_model_data, almost_binary_genotypes, params
+    tree, data, almost_binary_genotypes, params
 )
 
