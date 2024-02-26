@@ -16,7 +16,7 @@
     "indel_rho": 0.15,
     "vaf_absent": 0.1,
     "vaf_present": 0.3,
-    "vaf_threshold_mixmodel": 0.1,
+    "vaf_threshold_mixmodel": 0.3,
     "min_variant_reads_shared": 2,
     "min_vaf_shared": 2,
     "genotype_conv_prob": true,

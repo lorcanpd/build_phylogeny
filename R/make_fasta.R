@@ -131,13 +131,7 @@ create_binary_genotype <- function(data, sex, params) {
                         VAF >= (params$vaf_present * 2)) ~ 1,
                     (sex == "female" & VAF < params$vaf_absent) ~ 0,
                     (sex == "female" & VAF >= params$vaf_present) ~ 1,
-                    TRUE ~ 0
-                )
-            ) %>%
-            mutate(
-                binary_genotype = case_when(
-                    binary_genotype > 0 & binary_genotype < 1 ~ 0.5,
-                    TRUE ~ binary_genotype
+                    TRUE ~ 0.5
                 )
             ) %>%
         select(Sample, Muts, binary_genotype, Mutation_Type)
