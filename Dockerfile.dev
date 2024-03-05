@@ -84,6 +84,7 @@ RUN Rscript -e "install.packages('extraDist', version = '1.10.0', dependencies =
 RUN Rscript -e "install.packages('gridExtra', version = '2.3', dependencies = TRUE)"
 RUN Rscript -e "install.packages('MASS', version = '7.3-55', dependencies = TRUE)"
 RUN Rscript -e "install.packages('doParallel', version = '1.0.16', dependencies = TRUE)"
+RUN Rscript -e "install.packages('flexmix', dependencies = TRUE)"
 #RUN Rscript -e "install.packages('purrr', dependencies = TRUE)"
 #RUN Rscript -e "install.packages('rlang', dependencies = TRUE)"
 #RUN Rscript -e "install.packages('ggfun', dependencies = TRUE)"

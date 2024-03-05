@@ -29,7 +29,8 @@ Depends:
     VGAM,
     seqinr,
     treemut,
-    patchwork
+    patchwork,
+    flexmix
 
 
 

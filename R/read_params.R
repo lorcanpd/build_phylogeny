@@ -112,7 +112,7 @@ read_json_params <- function(json_file) {
         # Maximum number of SNVs to plot in mutational spectra
         max_muts_plot = 5000,
         # VAF threshold for the mixture modelling step to consider a sample clonal
-        vaf_treshold_mixmodel = 0.3
+        vaf_threshold_mixmodel = 0.3
     )
 
     file_params <- enforce_types(file_params, default_params)

@@ -207,7 +207,7 @@ params_for_mixmodel <- params
 params_for_mixmodel$ncores <- 1
 # mixture_model_data, params, tolerance = 1e-6, max_iter = 5000 # Use these parameters.
 mixture_model_results <- fit_binom_mix_model(
-    data, params_for_mixmodel, tolerance = 1e-4, max_iter = 500 # Test perameters
+    data, params_for_mixmodel, tolerance = 1e-9, max_iter = 5000 # Test perameters
 )
 
 print("Finished fitting binomial mixture models")
