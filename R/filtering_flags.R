@@ -91,19 +91,18 @@ create_depth_flag <- function(data, params, sex) {
 
 
 flag_shared_mutations <- function(data) {
-    # Function to determine whether a mutation is shared between samples. This
-    # is done by checking whether the mutation is present in at least two
-    # samples. If it is, the mutation is flagged as shared. If not, it is
-    # flagged as private.
-    data <- data %>%
+    # Determine which mutations are shared
+    shared_mutations <- data %>%
+        filter(NV > 0) %>%
         group_by(Muts) %>%
-        mutate(
-            shared = ifelse(
-                sum(NV > 0) > 1, TRUE, FALSE
-            )
-        )
+        summarise(shared = n_distinct(Sample) > 1, .groups = "drop")
+
+    # Join the shared flag back to the original data
+    data <- data %>%
+        left_join(shared_mutations, by = "Muts")
+
+    # Ensure all rows have a defined shared value
+    data$shared[is.na(data$shared)] <- FALSE
+
     return(data)
 }
-
-
-

@@ -134,7 +134,7 @@ estimate_beta_binomial_rho <- function(data, params) {
     }
 
     # Combine results and drop intermediate columns
-    final_data <- do.call(rbind, results)
+    final_data <- bind_rows(results)
 
     return(final_data)
 }

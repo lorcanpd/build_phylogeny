@@ -7,7 +7,7 @@ mixture_modelling <- function(
     process_sample <- function(sample_data) {
 
         # Get NV and NR columns plus muts as rowname in matrix
-        x <- sample_data[, c("NV", "NR")]
+        x <- as.matrix(sample_data[, c("NV", "NR")])
         rownames(x) <- sample_data$Muts
 
         models <- list()
@@ -54,12 +54,16 @@ mixture_modelling <- function(
         clusters <- clusters(best_model)
         clusters <- data.frame(clusters)
         rownames(clusters) <- rownames(x)
+        # Convert rownames to a column
+        clusters <- clusters %>%
+            rownames_to_column("Muts") %>%
+            setNames(c("Muts", "cluster"))
 
         # join the cluster assignments to the original data
         sample_data <- sample_data %>%
             left_join(
                 clusters,
-                by = c("Muts" = "rowname(clusters)")
+                by = c("Muts")
             ) %>%
             mutate(
                 peak_VAF = peak_VAF
@@ -90,55 +94,114 @@ mixture_modelling <- function(
 }
 
 
-plot_mixture_models <- function (data, params) {
 
-    pdf(
-        paste0(params$output_dir, "/mixture_model_plots.pdf"),
-        width = 11.7, height = 8.3
+plot_mixture_models <- function(data, params) {
+    pdf(paste0(params$output_dir, "/mixture_model_plots.pdf"), width = 11.7, height = 8.3)
+
+    cluster_palette <- c("1" = "#8DD3C7", "2" = "#FFFFB3", "3" = "#BEBADA")
+    line_palette <- c(
+        "Subclone VAF threshold" = "#FB8072",
+        "Main subclone peak VAF" = "#80B1D3"
     )
 
     for (sample in unique(data$Sample)) {
-        sample_data <- data %>%
-            filter(Sample == sample)
+        sample_data <- data %>% filter(Sample == sample)
         peak_VAF <- unique(sample_data$peak_VAF)
-        # Plot clusters with peak VAF line
-        p1 <- ggplot(sample_data, aes(x = VAF, fill=cluster)) +
-            geom_histogram(bins = 30, position = "stack", col=I("black")) +
-            geom_vline(
-                xintercept = peak_VAF, colour = "red", linetype = "dashed",
-                size = 1
-            ) +
-            geom_vline(
-                xintercept = params$vaf_threshold_mixmodel,
-                colour = "dark green", linetype = "dotted", size = 1
-            ) +
-            theme_bw() +
-            scale_fill_brewer(palette = "Set3") +
-            theme(legend.position = "none") +
-            ggtitle(paste("Stacked -", sample))
 
-        p2 <- ggplot(sample_data, aes(x = VAF, fill = cluster)) +
-            geom_density(alpha = 0.5, adjust = 1, col=I("black")) +
-            geom_vline(
-                aes(xintercept = peak_VAF), colour = "red", linetype = "dashed",
-                size = 1
-            ) +
-            geom_vline(
-                xintercept = params$vaf_threshold_mixmodel,
-                colour = "dark green", linetype = "dotted", size = 1
-            ) +
+        clusters_present <- unique(sample_data$cluster)
+
+        color_palette <- c(
+            setNames(
+                cluster_palette[seq_along(clusters_present)], clusters_present
+            ),
+            line_palette
+        )
+
+        # # Ensure colorfulness even with a single cluster by defining colors
+        # colors <- scales::brewer.pal(n = max(length(unique(sample_data$cluster)), 3), name = "Set3")
+
+
+        # Plot clusters with peak VAF line
+        p1 <- ggplot(sample_data, aes(x = VAF, fill = as.factor(cluster))) +
+            geom_histogram(bins = 30, position = "stack", show.legend = FALSE) +
+            geom_vline(aes(xintercept = peak_VAF, color = "Main subclone peak VAF"), linetype = "dashed", size = 1.5) +
+            geom_vline(aes(xintercept = params$vaf_threshold_mixmodel, color = "Subclone VAF threshold"), linetype = "dotted", size = 1.5) +
+            scale_fill_manual(values = cluster_palette) +
+            scale_color_manual(values = line_palette, name = "Thresholds") +
+            # guides(fill = guide_legend(title = "Clusters", order = 1)) +
             theme_bw() +
-            scale_fill_brewer(palette = "Set3") +
-            scale_color_brewer(palette = "Set3") +
+            theme(legend.position = "bottom") +
+            ggtitle(paste("Stacked -", sample)) +
+            coord_cartesian(xlim = c(0, 1))
+
+
+        # Density Plot
+        p2 <- ggplot(sample_data, aes(x = VAF, fill = as.factor(cluster))) +
+            geom_density(alpha = 0.7, adjust = 1, color = "black") +
+            geom_vline(aes(xintercept = peak_VAF, color = "Main subclone peak VAF"), linetype = "dashed", size = 1.5, show.legend=FALSE) +
+            geom_vline(aes(xintercept = params$vaf_threshold_mixmodel, color = "Subclone VAF threshold"), linetype = "dotted", size = 1.5, show.legend=FALSE) +
+            scale_fill_manual(values = cluster_palette, name = "Subclone clusters") +
+            scale_color_manual(values = line_palette, name = "") +
+            theme_bw() +
+            theme(legend.position = "bottom") +
             ggtitle(paste("Density -", sample)) +
-            theme(legend.position = "right")  # Adjust legend position if needed
+            coord_cartesian(xlim = c(0, 1))
 
         # Arrange the two plots side by side for the current sample
-        grid.arrange(p1, p2, ncol = 2)
-
-        dev.off()
+        print(grid.arrange(p1, p2, ncol = 2))
     }
+    dev.off()
 }
+
+#
+# plot_mixture_models <- function (data, params) {
+#
+#     pdf(
+#         paste0(params$output_dir, "/mixture_model_plots.pdf"),
+#         width = 11.7, height = 8.3
+#     )
+#
+#     for (sample in unique(data$Sample)) {
+#         sample_data <- data %>%
+#             filter(Sample == sample)
+#         peak_VAF <- unique(sample_data$peak_VAF)
+#         # Plot clusters with peak VAF line
+#         p1 <- ggplot(sample_data, aes(x = VAF, fill=cluster)) +
+#             geom_histogram(bins = 30, position = "stack", col=I("black")) +
+#             geom_vline(
+#                 xintercept = peak_VAF, colour = "red", linetype = "dashed",
+#                 size = 1
+#             ) +
+#             geom_vline(
+#                 xintercept = params$vaf_threshold_mixmodel,
+#                 colour = "dark green", linetype = "dotted", size = 1
+#             ) +
+#             theme_bw() +
+#             scale_fill_brewer(palette = "Set3") +
+#             theme(legend.position = "none") +
+#             ggtitle(paste("Stacked -", sample))
+#
+#         p2 <- ggplot(sample_data, aes(x = VAF, fill = cluster)) +
+#             geom_density(alpha = 0.5, adjust = 1, col=I("black")) +
+#             geom_vline(
+#                 aes(xintercept = peak_VAF), colour = "red", linetype = "dashed",
+#                 size = 1
+#             ) +
+#             geom_vline(
+#                 xintercept = params$vaf_threshold_mixmodel,
+#                 colour = "dark green", linetype = "dotted", size = 1
+#             ) +
+#             theme_bw() +
+#             scale_fill_brewer(palette = "Set3") +
+#             scale_color_brewer(palette = "Set3") +
+#             ggtitle(paste("Density -", sample)) +
+#             theme(legend.position = "right")
+#
+#         # Arrange the two plots side by side for the current sample
+#         print(gridExtra::grid.arrange(p1, p2, ncol = 2))
+#     }
+#     dev.off()
+# }
 
 
 

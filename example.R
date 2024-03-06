@@ -1,5 +1,4 @@
 
-
 # This script showcases how the modularised pipeline can be used to build a
 # phylogenetic tree, with optional iterative filtering and plotting of
 # mutational signatures. The pipeline is designed to be flexible and modular,
@@ -24,8 +23,7 @@ data <- create_depth_flag(data, params, sex)
 print("Estimating germline q-values")
 data <- create_germline_qval(data, params, sex)
 
-stats <- get_mutation_stats(data)
-print(stats)
+print(get_mutation_stats(data))
 
 # The germline is then filtered using log10(qval) < log10(0.00001), which
 # represents a q-value of 0.00001. This is equivalent to a p-value of 0.99999.
@@ -40,57 +38,22 @@ print("Filtering germline mutations and mutations of insufficient depth")
 
 data <- data %>%
     mutate(
-        NV = ifelse(
+        removed_by_depth_germline = ifelse(
             (sufficient_depth & log10(germline_qval) < params$germline_cutoff),
-            NV, 0
-        ),
-        VAF = ifelse(
-            (sufficient_depth & log10(germline_qval) < params$germline_cutoff),
-            VAF, 0
+            FALSE, TRUE
         )
     )
 
-filtered_out <- data %>%
-    # Group by mutation identifier
-    group_by(Muts) %>%
-    # Filter to retain mutations if all samples fail the conditions
-    filter(
-        all(VAF == 0)
-    ) %>%
-    # Ungroup to remove the grouping structure
-    ungroup()
-
-data <- data %>%
-    group_by(Muts) %>%
-    # Filter to retain mutations if all samples fail the conditions
-    filter(
-        any(VAF > 0)
-    ) %>%
-    # Ungroup to remove the grouping structure
-    ungroup()
-
-stats <- get_mutation_stats(data)
-print(stats)
-
-plot_spectrum_lattice(
-    data, TRUE,
-    add_to_title = "_retained_by_depth_germline_filters",
-    by_sample = FALSE
-)
-plot_spectrum_lattice(
-    filtered_out, TRUE,
-    add_to_title = "_excluded_by_depth_germline_filters",
-    by_sample = FALSE
-)
-rm(filtered_out)
 
 if (params$beta_binom_shared) {
     print("Flagging shared mutations")
     data <- flag_shared_mutations(data)
-    # Estimate rho for each mutation
-    data <- data %>%
-        filter(shared == TRUE)
 }
+
+data <- data %>%
+    filter(removed_by_depth_germline == FALSE & shared == TRUE)
+
+print(get_mutation_stats(data))
 
 print("Estimating rho (overdispersion) for each mutation")
 data <- estimate_beta_binomial_rho(data, params)
@@ -99,168 +62,70 @@ print("Filtering mutations with high rho")
 
 data <- data %>%
     mutate(
-        NV = ifelse(
+        filtered_by_overdispersion = ifelse(
             (Mutation_Type == "SNV" & rho_estimate < params$snv_rho) |
             (Mutation_Type == "indel" & rho_estimate < params$indel_rho),
-            NV, 0
-        ),
-        VAF = ifelse(
-            (Mutation_Type == "SNV" & rho_estimate < params$snv_rho) |
-            (Mutation_Type == "indel" & rho_estimate < params$indel_rho),
-            VAF, 0
+            FALSE, TRUE
         )
     )
 
-filtered_out <- data %>%
-    # Group by mutation identifier
-    group_by(Muts) %>%
-    # Filter to retain mutations if all samples fail the conditions
-    filter(
-        all(VAF == 0)
-    ) %>%
-    # Ungroup to remove the grouping structure
-    ungroup()
 
 data <- data %>%
-    group_by(Muts) %>%
-    # Filter to retain mutations if all samples fail the conditions
-    filter(
-        any(VAF > 0)
-    ) %>%
-    # Ungroup to remove the grouping structure
-    ungroup()
+    filter(filtered_by_overdispersion == FALSE)
 
-stats <- get_mutation_stats(data)
-print(stats)
+print(get_mutation_stats(data))
 
-plot_spectrum_lattice(
-    data, TRUE,
-    add_to_title = "_retained_by_overdispersion_filter",
-    by_sample = FALSE
-)
-
-plot_spectrum_lattice(
-    filtered_out, TRUE,
-    add_to_title = "_excluded_by_overdispersion_filter",
-    by_sample = FALSE
-)
-rm(filtered_out)
 
 # Filter out non-autosomal mutations and those with fewer than three supporting
 # reads
 data <- data %>%
     mutate(
-        NV = ifelse(
+        filtered_by_autosome_and_support_reads = ifelse(
             (is_XY_chromosomal | NR < 3),
-            0, NV
-        ),
-        VAF = ifelse(
-            (is_XY_chromosomal | NR < 3),
-            0, VAF
+            TRUE, FALSE
         )
     )
 
-filtered_out <- data %>%
-    # Group by mutation identifier
-    group_by(Muts) %>%
-    # Filter to retain mutations if all samples fail the conditions
-    filter(
-        all(VAF == 0)
-    ) %>%
-    # Ungroup to remove the grouping structure
-    ungroup()
-
 data <- data %>%
-    group_by(Muts) %>%
-    # Filter to retain mutations if all samples fail the conditions
-    filter(
-        any(VAF > 0)
-    ) %>%
-    # Ungroup to remove the grouping structure
-    ungroup()
+    filter(filtered_by_autosome_and_support_reads == FALSE)
 
-stats <- get_mutation_stats(data)
-print(stats)
+print(get_mutation_stats(data))
 
-plot_spectrum_lattice(
-    data, TRUE,
-    add_to_title = "_retained_by_autosomal_filter",
-    by_sample = FALSE
-)
+test <- flag_close_to_indel(data, params)
 
-plot_spectrum_lattice(
-    filtered_out, TRUE,
-    add_to_title = "_excluded_by_autosomal_filter",
-    by_sample = FALSE
-)
-rm(filtered_out)
+test <- test %>%
+    filter(close_to_indel == FALSE)
+
+print(get_mutation_stats(test))
+
+# Testing up to here complete.
 
 # Avoid numerical error from dividing by 0.
 data <- data %>%
     # set NR == 0 to 1
     mutate(NR = ifelse(NR == 0, 1, NR))
 
+
+
+
 print("Fitting binomial mixture models")
-# Currently mixture modellnig can't be done with multiple cores.
-# Probably due to the fact I can only get a notebook with 16 gb RAM.
-params_for_mixmodel <- params
-params_for_mixmodel$ncores <- 1
-# mixture_model_data, params, tolerance = 1e-6, max_iter = 5000 # Use these parameters.
-mixture_model_results <- fit_binom_mix_model(
-    data, params_for_mixmodel, tolerance = 1e-9, max_iter = 5000 # Test perameters
-)
 
-print("Finished fitting binomial mixture models")
-data <- get_peak_VAFs(data, mixture_model_results)
+mix_model_results <- mixture_modelling(data %>% filter(NV > 0), params)
 
-plot_all_mixture_models(data, mixture_model_results, params)
+plot_mixture_models(mix_model_results, params)
 
 data <- data %>%
     mutate(
-        NV = ifelse(
+        filtered_by_mixture_model = ifelse(
             (peak_VAF > params$vaf_threshold_mixmodel),
-            NV, 0
-        ),
-        VAF = ifelse(
-            (peak_VAF > params$vaf_threshold_mixmodel),
-            VAF, 0
+            FALSE, TRUE
         )
     )
 
-filtered_out <- data %>%
-    # Group by mutation identifier
-    group_by(Muts) %>%
-    # Filter to retain mutations if all samples fail the conditions
-    filter(
-        all(VAF == 0)
-    ) %>%
-    # Ungroup to remove the grouping structure
-    ungroup()
-
-data <- data %>%
-    group_by(Muts) %>%
-    # Filter to retain mutations if all samples fail the conditions
-    filter(
-        any(VAF > 0)
-    ) %>%
-    # Ungroup to remove the grouping structure
-    ungroup()
 
 stats <- get_mutation_stats(data)
 print(stats)
 
-plot_spectrum_lattice(
-    data, TRUE,
-    add_to_title = "_retained_by_mixture_model_filter",
-    by_sample = FALSE
-)
-
-plot_spectrum_lattice(
-    filtered_out, TRUE,
-    add_to_title = "_excluded_by_mixture_model_filter",
-    by_sample = FALSE
-)
-rm(filtered_out)
 
 # SAVE FILTERED DATA TO FILE
 write.table(
@@ -280,8 +145,24 @@ data <- read.table(
 )
 
 print("Constructing fasta file")
+
+# Add 0 to the NV and the VAF, and 1 to the NR for the mutations not present in one sample
+# but present in another. This is to avoid numerical errors when creating the
+# genotype.
+
+genotyping_data <- data %>%
+    ungroup() %>%
+    select(Muts, Sample, NV, NR, VAF) %>%
+    complete(Muts, Sample, fill = list(NV = 0, NR = 1, VAF = 0)) %>%
+    arrange(Muts, Sample)
+
+stats <- get_mutation_stats(genotyping_data )
+print(stats)
+
+
+
 almost_binary_genotypes <- create_binary_genotype(
-    data, sex, params
+    genotyping_data, sex, params
 )
 make_fasta(almost_binary_genotypes, params)
 
