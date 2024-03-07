@@ -8,20 +8,38 @@
 
 library(buildphylogeny)
 
-print("Reading data")
-params <- read_json_params("example_params.json")
-data <- process_data(params)
-data <- annotate_mutations(data, genomeFile = params$genome_file)
+print("Reading in mapping and base quality filtered data")
+blood_params <- read_json_params("blood_params.json")
+gut_params <- read_json_params("gut_params.json")
+blood_data <- process_data(blood_params)
+gut_data <- process_data(gut_params)
+data <- bind_rows(blood_data, gut_data)
+
+print("Reading in unfiltered data for read ration comparison")
+unfiltered_blood_params <- read_json_params("unfiltered_blood_params.json")
+unfiltered_gut_params <- read_json_params("unfiltered_gut_params.json")
+unfiltered_blood_data <- process_data(unfiltered_blood_params)
+unfiltered_gut_data <- process_data(unfiltered_gut_params)
+unfiltered_data <- bind_rows(unfiltered_blood_data, unfiltered_gut_data)
+
+print("Using read ratio flags to filter out mutations")
+data <- read_ratio_flags(data, unfiltered_data, ratio_threshold = 0.75)
+
+data <- data %>%
+    filter(filtered_by_read_ratio == FALSE)
+
+
+data <- annotate_mutations(data, genomeFile = blood_params$genome_file)
 
 print("Generating filtering flags")
 data <- create_XY_flag(data)
 sex <- determine_sex(data)
-data <- create_CNV_flag(data, params)
+data <- create_CNV_flag(data, blood_params)
 data <- determine_mutation_type(data)
-data <- create_depth_flag(data, params, sex)
+data <- create_depth_flag(data, blood_params, sex)
 
 print("Estimating germline q-values")
-data <- create_germline_qval(data, params, sex)
+data <- create_germline_qval(data, blood_params, sex)
 
 print(get_mutation_stats(data))
 
@@ -39,13 +57,14 @@ print("Filtering germline mutations and mutations of insufficient depth")
 data <- data %>%
     mutate(
         removed_by_depth_germline = ifelse(
-            (sufficient_depth & log10(germline_qval) < params$germline_cutoff),
+            (sufficient_depth &
+                log10(germline_qval) < blood_params$germline_cutoff),
             FALSE, TRUE
         )
     )
 
 
-if (params$beta_binom_shared) {
+if (blood_params$beta_binom_shared) {
     print("Flagging shared mutations")
     data <- flag_shared_mutations(data)
 }
@@ -56,15 +75,15 @@ data <- data %>%
 print(get_mutation_stats(data))
 
 print("Estimating rho (overdispersion) for each mutation")
-data <- estimate_beta_binomial_rho(data, params)
+data <- estimate_beta_binomial_rho(data, blood_params)
 
 print("Filtering mutations with high rho")
 
 data <- data %>%
     mutate(
         filtered_by_overdispersion = ifelse(
-            (Mutation_Type == "SNV" & rho_estimate < params$snv_rho) |
-            (Mutation_Type == "indel" & rho_estimate < params$indel_rho),
+            (Mutation_Type == "SNV" & rho_estimate < blood_params$snv_rho) |
+            (Mutation_Type == "indel" & rho_estimate < blood_params$indel_rho),
             FALSE, TRUE
         )
     )
@@ -91,7 +110,7 @@ data <- data %>%
 
 print(get_mutation_stats(data))
 
-test <- flag_close_to_indel(data, params)
+test <- flag_close_to_indel(data, blood_params)
 
 test <- test %>%
     filter(close_to_indel == FALSE)
@@ -110,14 +129,14 @@ data <- data %>%
 
 print("Fitting binomial mixture models")
 
-mix_model_results <- mixture_modelling(data %>% filter(NV > 0), params)
+mix_model_results <- mixture_modelling(data %>% filter(NV > 0), blood_params)
 
-plot_mixture_models(mix_model_results, params)
+plot_mixture_models(mix_model_results, blood_params)
 
 data <- data %>%
     mutate(
         filtered_by_mixture_model = ifelse(
-            (peak_VAF > params$vaf_threshold_mixmodel),
+            (peak_VAF > blood_params$vaf_threshold_mixmodel),
             FALSE, TRUE
         )
     )
@@ -131,7 +150,8 @@ print(stats)
 write.table(
     data,
     file = paste0(
-        params$output_dir, "/", params$donor_id, "_final_filtered_data.csv"
+        blood_params$output_dir, "/",
+        blood_params$donor_id, "_final_filtered_data.csv"
     ),
     sep = ",", quote = FALSE, row.names = FALSE
 )
@@ -139,7 +159,8 @@ write.table(
 # load from disk
 data <- read.table(
     file = paste0(
-        params$output_dir, "/", params$donor_id, "_final_filtered_data.csv"
+        blood_params$output_dir, "/",
+        blood_params$donor_id, "_final_filtered_data.csv"
     ),
     header = TRUE, sep = ",", stringsAsFactors = FALSE
 )
@@ -149,6 +170,13 @@ print("Constructing fasta file")
 # Add 0 to the NV and the VAF, and 1 to the NR for the mutations not present in one sample
 # but present in another. This is to avoid numerical errors when creating the
 # genotype.
+if (blood_params$genotype_conv_prob) {
+    data <- flag_conv_shared_mutations(data, blood_params)
+    # TODO: Find out what Tim meant in his original script with min_shared_vaf
+    #  default value = 2 and then indexing this integer (which will fail) to
+    #  get separate values for autosomal and XY depending on sample sex. In
+    #  any case we are not using it here.
+}
 
 genotyping_data <- data %>%
     ungroup() %>%
@@ -162,32 +190,32 @@ print(stats)
 
 
 almost_binary_genotypes <- create_binary_genotype(
-    genotyping_data, sex, params
+    genotyping_data, sex, blood_params
 )
-make_fasta(almost_binary_genotypes, params)
+make_fasta(almost_binary_genotypes, blood_params)
 
 print("Running MPBoot")
-if (params$only_snvs) {
+if (blood_params$only_snvs) {
     command <- paste0(
-        params$mpboot_path, " -s ", params$output_dir, "/",
-        params$donor_id, "_SNV_for_MPBoot.fa -bb 1000"
+        blood_params$mpboot_path, " -s ", blood_params$output_dir, "/",
+        blood_params$donor_id, "_SNV_for_MPBoot.fa -bb 1000"
     )
 } else {
     command <- paste0(
-        params$mpboot_path, " -s ", params$output_dir, "/",
-        params$donor_id, "_indel_for_MPBoot.fa -bb 1000"
+        blood_params$mpboot_path, " -s ", blood_params$output_dir, "/",
+        blood_params$donor_id, "_indel_for_MPBoot.fa -bb 1000"
     )
 }
 
 system(command, ignore.stdout = T)  # TODO Should we ignore stdout?
 
 mpboot_out <- paste0(
-    params$output_dir, "/",
-    params$donor_id, "_SNV_for_MPBoot.fa.treefile"
+    blood_params$output_dir, "/",
+    blood_params$donor_id, "_SNV_for_MPBoot.fa.treefile"
 )
-tree <- prepare_tree(mpboot_out, params)
+tree <- prepare_tree(mpboot_out, blood_params)
 
 assign_mutations_and_plot(
-    tree, data, almost_binary_genotypes, params
+    tree, data, almost_binary_genotypes, blood_params
 )
 

@@ -13,7 +13,6 @@ flag_close_to_indel <- function (mutations, params) {
             # we just need the indel regions.
             select(start, end)
 
-
         # Check for overlap using a non-equi join
         result <- mutations_subset %>%
             rowwise() %>%

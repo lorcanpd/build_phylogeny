@@ -91,11 +91,15 @@ create_depth_flag <- function(data, params, sex) {
 
 
 flag_shared_mutations <- function(data) {
+
     # Determine which mutations are shared
     shared_mutations <- data %>%
         filter(NV > 0) %>%
         group_by(Muts) %>%
-        summarise(shared = n_distinct(Sample) > 1, .groups = "drop")
+        summarise(
+            shared = n_distinct(Sample) >= 2,
+            .groups = "drop"
+        )
 
     # Join the shared flag back to the original data
     data <- data %>%
@@ -103,6 +107,27 @@ flag_shared_mutations <- function(data) {
 
     # Ensure all rows have a defined shared value
     data$shared[is.na(data$shared)] <- FALSE
+
+    return(data)
+}
+
+flag_conv_shared_mutations <- function(data, params) {
+
+    # Determine which mutations are shared
+    shared_mutations <- data %>%
+        filter(NV > 0) %>%
+        group_by(Muts) %>%
+        summarise(
+            conv_shared = n_distinct(Sample) >= params$min_variant_reads_shared,
+            .groups = "drop"
+        )
+
+    # Join the shared flag back to the original data
+    data <- data %>%
+        left_join(shared_mutations, by = "Muts")
+
+    # Ensure all rows have a defined shared value
+    data$conv_shared[is.na(data$conv_shared)] <- FALSE
 
     return(data)
 }
