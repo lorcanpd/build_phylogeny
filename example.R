@@ -11,16 +11,25 @@ library(buildphylogeny)
 print("Reading in mapping and base quality filtered data")
 blood_params <- read_json_params("blood_params.json")
 gut_params <- read_json_params("gut_params.json")
-blood_data <- process_data(blood_params)
+# blood_data <- process_data(blood_params)
 gut_data <- process_data(gut_params)
-data <- bind_rows(blood_data, gut_data)
+# data <- bind_rows(blood_data, gut_data)
+data <- gut_data
 
 print("Reading in unfiltered data for read ration comparison")
-unfiltered_blood_params <- read_json_params("unfiltered_blood_params.json")
+# unfiltered_blood_params <- read_json_params("unfiltered_blood_params.json")
 unfiltered_gut_params <- read_json_params("unfiltered_gut_params.json")
-unfiltered_blood_data <- process_data(unfiltered_blood_params)
+# unfiltered_blood_data <- process_data(unfiltered_blood_params)
 unfiltered_gut_data <- process_data(unfiltered_gut_params)
-unfiltered_data <- bind_rows(unfiltered_blood_data, unfiltered_gut_data)
+# unfiltered_data <- bind_rows(unfiltered_blood_data, unfiltered_gut_data)
+unfiltered_data <- unfiltered_gut_data
+
+rm(
+    # blood_data,
+    gut_data,
+    # unfiltered_blood_data,
+    unfiltered_gut_data
+)
 
 print("Using read ratio flags to filter out mutations")
 data <- read_ratio_flags(data, unfiltered_data, ratio_threshold = 0.75)

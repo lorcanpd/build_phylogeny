@@ -14,18 +14,18 @@ read_ratio_flags <- function (data, unfiltered_data, ratio_threshold = 0.75) {
 
     filtered <- data %>%
         select(Muts, Sample, NV) %>%
-        rename(NV_filtered = NV)
+        dplyr::rename(NV_filtered = NV)
 
     unfiltered <- unfiltered_data %>%
-            select(Muts, Sample, NV) %>%
-            rename(NV_unfiltered = NV)
+        select(Muts, Sample, NV) %>%
+        dplyr::rename(NV_unfiltered = NV)
 
     ratio_data <- filtered %>%
         left_join(unfiltered, by = c("Muts", "Sample")) %>%
         mutate(
             ratio = NV_filtered / NV_unfiltered,
             filtered_by_read_ratio = ifelse(
-                ratio > ratio_threshold, TRUE, FALSE
+                ratio < ratio_threshold, TRUE, FALSE
             )
         ) %>%
         select(Muts, Sample, filtered_by_read_ratio)
