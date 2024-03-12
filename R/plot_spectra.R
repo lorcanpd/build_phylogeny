@@ -7,7 +7,7 @@ library(patchwork)
 # Call in package which allows scanFa
 library(Rsamtools)
 
-annotate_mutations <- function(mutations, genomeFile) {
+annotate_mutations <- function(mutations, params) {
 
     ntcomp <- c(T = "A", G = "C", C = "G", A = "T")
 
@@ -56,7 +56,7 @@ annotate_mutations <- function(mutations, genomeFile) {
         )
         # Use mclapply for parallel processing
         results <- mclapply(
-            mutations_chunks, process_mutation_chunk, genomeFile,
+            mutations_chunks, process_mutation_chunk, params$genome_file,
             mc.cores = num_cores
         )
         # Combine results
@@ -65,7 +65,7 @@ annotate_mutations <- function(mutations, genomeFile) {
     } else {
         # If only one core, just apply the function normally
         annotated_mutations <- process_mutation_chunk(
-            mutations_accross_samples, genomeFile
+            mutations_accross_samples, params$genome_file
         )
     }
 
@@ -167,7 +167,7 @@ plot_data <- function(freqs, sample_name, add_to_title = "") {
         ) +
         scale_y_continuous(
             expand = c(0, 0),
-            breaks = seq(0, top, top%/%5)
+            breaks = seq(0, top, top %/% 5)
         ) +
         coord_cartesian(xlim = c(-1, NA))
 

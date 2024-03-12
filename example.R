@@ -38,7 +38,7 @@ data <- data %>%
     filter(filtered_by_read_ratio == FALSE)
 
 
-data <- annotate_mutations(data, genomeFile = blood_params$genome_file)
+data <- annotate_mutations(data, blood_params)
 
 print("Generating filtering flags")
 data <- create_XY_flag(data)
