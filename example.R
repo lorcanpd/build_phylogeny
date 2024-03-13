@@ -11,23 +11,22 @@ library(buildphylogeny)
 print("Reading in mapping and base quality filtered data")
 blood_params <- read_json_params("blood_params.json")
 gut_params <- read_json_params("gut_params.json")
-# blood_data <- process_data(blood_params)
+blood_data <- process_data(blood_params)
 gut_data <- process_data(gut_params)
-# data <- bind_rows(blood_data, gut_data)
-data <- gut_data
+data <- bind_rows(blood_data, gut_data)
 
 print("Reading in unfiltered data for read ration comparison")
-# unfiltered_blood_params <- read_json_params("unfiltered_blood_params.json")
+unfiltered_blood_params <- read_json_params("unfiltered_blood_params.json")
 unfiltered_gut_params <- read_json_params("unfiltered_gut_params.json")
-# unfiltered_blood_data <- process_data(unfiltered_blood_params)
+unfiltered_blood_data <- process_data(unfiltered_blood_params)
 unfiltered_gut_data <- process_data(unfiltered_gut_params)
-# unfiltered_data <- bind_rows(unfiltered_blood_data, unfiltered_gut_data)
-unfiltered_data <- unfiltered_gut_data
+unfiltered_data <- bind_rows(unfiltered_blood_data, unfiltered_gut_data)
 
+# Reduce memory usage by removing unneeded data
 rm(
-    # blood_data,
+    blood_data,
     gut_data,
-    # unfiltered_blood_data,
+    unfiltered_blood_data,
     unfiltered_gut_data
 )
 
@@ -36,7 +35,6 @@ data <- read_ratio_flags(data, unfiltered_data, ratio_threshold = 0.75)
 
 data <- data %>%
     filter(filtered_by_read_ratio == FALSE)
-
 
 data <- annotate_mutations(data, blood_params)
 
@@ -72,7 +70,6 @@ data <- data %>%
         )
     )
 
-
 if (blood_params$beta_binom_shared) {
     print("Flagging shared mutations")
     data <- flag_shared_mutations(data)
@@ -97,12 +94,10 @@ data <- data %>%
         )
     )
 
-
 data <- data %>%
     filter(filtered_by_overdispersion == FALSE)
 
 print(get_mutation_stats(data))
-
 
 # Filter out non-autosomal mutations and those with fewer than three supporting
 # reads
@@ -124,22 +119,19 @@ data <- flag_close_to_indel(data, blood_params)
 data <- data %>%
     filter(close_to_indel == FALSE)
 
-print(get_mutation_stats(test))
+print(get_mutation_stats(data))
 
 # Avoid numerical error from dividing by 0.
 data <- data %>%
     mutate(NR = ifelse(NR == 0, 1, NR))
 
 
-
-
 print("Fitting binomial mixture models")
-
 # Test how changing the addition of 0 NVs effects the behaviour of the mixture
 # model. In particular how does this alter the output?
-mix_model_results <- mixture_modelling(data %>% filter(NV > 0), blood_params)
+data <- mixture_modelling(data %>% filter(NV > 0), blood_params)
 
-plot_mixture_models(mix_model_results, blood_params)
+plot_mixture_models(data, blood_params)
 
 data <- data %>%
     mutate(
@@ -149,9 +141,13 @@ data <- data %>%
         )
     )
 
+# IMPORTANT!!!
+# Ignore this for now as this would remove all the samples haha. Once all
+# samples are included then uncomment.
+# data <- data %>%
+#     filter(filtered_by_mixture_model == FALSE)
 
-stats <- get_mutation_stats(data)
-print(stats)
+print(get_mutation_stats(data))
 
 
 # SAVE FILTERED DATA TO FILE
@@ -185,15 +181,17 @@ if (blood_params$genotype_conv_prob) {
 
 genotyping_data <- data %>%
     ungroup() %>%
-    select(Muts, Sample, NV, NR, VAF, Mutation_Type) %>%
+    select(Muts, Sample, NV, NR, VAF, Mutation_Type, is_XY_chromosomal) %>%
     complete(
         Muts, Sample,
-        fill = list(NV = 0, NR = 1, VAF = 0, Mutation_Type = "SNV")
+        fill = list(
+            NV = 0, NR = 1, VAF = 0, Mutation_Type = "SNV",
+            is_XY_chromosomal = FALSE
+        )
     ) %>%
     arrange(Muts, Sample)
 
-stats <- get_mutation_stats(genotyping_data)
-print(stats)
+print(get_mutation_stats(genotyping_data))
 
 almost_binary_genotypes <- create_binary_genotype(
     genotyping_data, sex, blood_params
@@ -213,7 +211,7 @@ if (blood_params$only_snvs) {
     )
 }
 
-system(command, ignore.stdout = T)  # TODO Should we ignore stdout?
+system(command, ignore.stdout = F)
 
 mpboot_out <- paste0(
     blood_params$output_dir, "/",
@@ -223,6 +221,6 @@ tree <- prepare_tree(mpboot_out, blood_params)
 
 # Debug this.
 assign_mutations_and_plot(
-    tree, data, almost_binary_genotypes, blood_params
+    tree, genotyping_data, almost_binary_genotypes, blood_params
 )
 
