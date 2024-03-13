@@ -119,18 +119,15 @@ data <- data %>%
 
 print(get_mutation_stats(data))
 
-test <- flag_close_to_indel(data, blood_params)
+data <- flag_close_to_indel(data, blood_params)
 
-test <- test %>%
+data <- data %>%
     filter(close_to_indel == FALSE)
 
 print(get_mutation_stats(test))
 
-# Testing up to here complete.
-
 # Avoid numerical error from dividing by 0.
 data <- data %>%
-    # set NR == 0 to 1
     mutate(NR = ifelse(NR == 0, 1, NR))
 
 
@@ -138,6 +135,8 @@ data <- data %>%
 
 print("Fitting binomial mixture models")
 
+# Test how changing the addition of 0 NVs effects the behaviour of the mixture
+# model. In particular how does this alter the output?
 mix_model_results <- mixture_modelling(data %>% filter(NV > 0), blood_params)
 
 plot_mixture_models(mix_model_results, blood_params)
@@ -176,9 +175,6 @@ data <- read.table(
 
 print("Constructing fasta file")
 
-# Add 0 to the NV and the VAF, and 1 to the NR for the mutations not present in one sample
-# but present in another. This is to avoid numerical errors when creating the
-# genotype.
 if (blood_params$genotype_conv_prob) {
     data <- flag_conv_shared_mutations(data, blood_params)
     # TODO: Find out what Tim meant in his original script with min_shared_vaf
@@ -189,14 +185,15 @@ if (blood_params$genotype_conv_prob) {
 
 genotyping_data <- data %>%
     ungroup() %>%
-    select(Muts, Sample, NV, NR, VAF) %>%
-    complete(Muts, Sample, fill = list(NV = 0, NR = 1, VAF = 0)) %>%
+    select(Muts, Sample, NV, NR, VAF, Mutation_Type) %>%
+    complete(
+        Muts, Sample,
+        fill = list(NV = 0, NR = 1, VAF = 0, Mutation_Type = "SNV")
+    ) %>%
     arrange(Muts, Sample)
 
-stats <- get_mutation_stats(genotyping_data )
+stats <- get_mutation_stats(genotyping_data)
 print(stats)
-
-
 
 almost_binary_genotypes <- create_binary_genotype(
     genotyping_data, sex, blood_params
@@ -224,6 +221,7 @@ mpboot_out <- paste0(
 )
 tree <- prepare_tree(mpboot_out, blood_params)
 
+# Debug this.
 assign_mutations_and_plot(
     tree, data, almost_binary_genotypes, blood_params
 )

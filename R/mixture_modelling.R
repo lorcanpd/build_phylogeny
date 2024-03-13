@@ -1,6 +1,7 @@
 
 mixture_modelling <- function(
     data, params, tolerance = 1e-6, max_iter = 5000, method = "BIC") {
+
     # Split data by Sample
     data_split <- split(data, data$Sample)
 

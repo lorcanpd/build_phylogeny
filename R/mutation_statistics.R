@@ -5,7 +5,6 @@ get_mutation_stats <- function(data) {
     if (!"shared" %in% colnames(data)) {
         # Flagging shared mutations
         data <- data %>%
-            filter(NV > 0) %>%
             group_by(Muts) %>%
             mutate(
                 # Identify shared mutations as those present in more than one sample
@@ -19,11 +18,10 @@ get_mutation_stats <- function(data) {
     stats <- data %>%
         group_by(Sample) %>%
         summarise(
-            total_mutations = n_distinct(Muts),
+            total_mutations = n(),
             mutations_with_supporting_read = sum(NV > 0),
             shared_mutations = sum(shared),
-            unique_mutations = sum(NV > 0 & !shared),
-            .groups = "drop"
+            unique_mutations = sum(NV > 0 & !shared)
         )
 
     return(stats)
