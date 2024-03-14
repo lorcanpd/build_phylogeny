@@ -45,59 +45,24 @@ data <- create_CNV_flag(data, blood_params)
 data <- determine_mutation_type(data)
 data <- create_depth_flag(data, blood_params, sex)
 
-print("Estimating germline q-values")
-data <- create_germline_qval(data, blood_params, sex)
+data <- flag_binary_germline(data, presence_threshold = 3)
 
-print(get_mutation_stats(data))
+test <- flag_binary_shared(data, presence_threshold = 3)
+test <- flag_binary_unique(test, presence_threshold = 3)
 
-# The germline is then filtered using log10(qval) < log10(0.00001), which
-# represents a q-value of 0.00001. This is equivalent to a p-value of 0.99999.
-# This is the default value used in the original script, but it can be changed
-# using the germline_cutoff parameter in the params file.
-# This represents a very stringent filter, with only the most confident
-# (99.999% certain) mutations being retained. This is to ensure that the
-# mutations used to construct the phylogenetic tree are as accurate as
-# possible.
-print("Filtering germline mutations and mutations of insufficient depth")
-# Apply depth and germline filters using params file
-
-data <- data %>%
-    mutate(
-        removed_by_depth_germline = ifelse(
-            (sufficient_depth &
-                log10(germline_qval) < blood_params$germline_cutoff),
-            FALSE, TRUE
-        )
-    )
-
-if (blood_params$beta_binom_shared) {
-    print("Flagging shared mutations")
-    data <- flag_shared_mutations(data)
-}
+test %>%
+    group_by(Sample) %>%
+    summarise(
+        total = n(),
+        below_thresholds = sum(!binary_unique & !binary_shared),
+        unique = sum(binary_unique),
+        shared = sum(binary_shared)
+    ) %>%
+    select(Sample, total, below_thresholds, shared, unique) %>%
+    print()
 
 data <- data %>%
-    filter(removed_by_depth_germline == FALSE & shared == TRUE)
-
-print(get_mutation_stats(data))
-
-print("Estimating rho (overdispersion) for each mutation")
-data <- estimate_beta_binomial_rho(data, blood_params)
-
-print("Filtering mutations with high rho")
-
-data <- data %>%
-    mutate(
-        filtered_by_overdispersion = ifelse(
-            (Mutation_Type == "SNV" & rho_estimate < blood_params$snv_rho) |
-            (Mutation_Type == "indel" & rho_estimate < blood_params$indel_rho),
-            FALSE, TRUE
-        )
-    )
-
-data <- data %>%
-    filter(filtered_by_overdispersion == FALSE)
-
-print(get_mutation_stats(data))
+    filter(binary_germline == FALSE & sufficient_depth)
 
 # Filter out non-autosomal mutations and those with fewer than three supporting
 # reads
@@ -112,14 +77,24 @@ data <- data %>%
 data <- data %>%
     filter(filtered_by_autosome_and_support_reads == FALSE)
 
-print(get_mutation_stats(data))
-
 data <- flag_close_to_indel(data, blood_params)
 
 data <- data %>%
     filter(close_to_indel == FALSE)
 
-print(get_mutation_stats(data))
+data <- flag_binary_shared(data, presence_threshold = 3)
+data <- flag_binary_unique(data, presence_threshold = 3)
+
+data %>%
+    group_by(Sample) %>%
+    summarise(
+        total = n(),
+        below_thresholds = sum(!binary_unique & !binary_shared),
+        unique = sum(binary_unique),
+        shared = sum(binary_shared)
+    ) %>%
+    select(Sample, total, below_thresholds, shared, unique) %>%
+    print()
 
 # Avoid numerical error from dividing by 0.
 data <- data %>%
