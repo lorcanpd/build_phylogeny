@@ -12,10 +12,10 @@ flag_binary_germline <- function(data, presence_threshold) {
 }
 
 
-flag_binary_shared <- function(data, presence_threshold) {
+flag_binary_shared <- function(data, presence_threshold, shared_by_number) {
     data <- data %>%
         group_by(Muts) %>%
-        mutate(binary_shared = sum(NV >= presence_threshold) > 1) %>%
+        mutate(binary_shared = sum(NV >= presence_threshold) > shared_by_number) %>%
         ungroup()
 
     return(data)

@@ -90,6 +90,13 @@ create_depth_flag <- function(data, params, sex) {
 }
 
 
+# Sort data by column dplyir
+sort_data <- function(data, column) {
+    data <- data %>%
+        arrange(column)
+    return(data)
+}
+
 flag_shared_mutations <- function(data) {
 
     # Determine which mutations are shared

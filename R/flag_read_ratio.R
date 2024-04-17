@@ -24,8 +24,14 @@ read_ratio_flags <- function (data, unfiltered_data, ratio_threshold = 0.75) {
         left_join(unfiltered, by = c("Muts", "Sample")) %>%
         mutate(
             ratio = NV_filtered / NV_unfiltered,
-            filtered_by_read_ratio = ifelse(
-                ratio < ratio_threshold, TRUE, FALSE
+#             filtered_by_read_ratio = ifelse(
+#                 ratio < ratio_threshold, TRUE, FALSE
+#             )
+            filtered_by_read_ratio = case_when(
+                is.na(ratio) ~ TRUE
+                ratio < ratio_threshold ~ TRUE,
+                ratio >= ratio_threshold ~ FALSE
+                )
             )
         ) %>%
         select(Muts, Sample, filtered_by_read_ratio)

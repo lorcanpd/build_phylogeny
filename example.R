@@ -45,6 +45,7 @@ data <- create_CNV_flag(data, blood_params)
 data <- determine_mutation_type(data)
 data <- create_depth_flag(data, blood_params, sex)
 
+
 data <- flag_binary_germline(data, presence_threshold = 3)
 
 test <- flag_binary_shared(data, presence_threshold = 3)
@@ -62,7 +63,9 @@ test %>%
     print()
 
 data <- data %>%
-    filter(binary_germline == FALSE & sufficient_depth)
+    group_by(Muts) %>%
+    filter(all(binary_germline) == FALSE & all(sufficient_depth)) %>%
+    ungroup()
 
 # Filter out non-autosomal mutations and those with fewer than three supporting
 # reads
