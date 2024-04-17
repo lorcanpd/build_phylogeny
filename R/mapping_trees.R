@@ -165,7 +165,7 @@ write_mutations_per_branch <- function(tree, NR, params) {
     write.table(
         Mutations_per_branch,
         paste0(
-            params$output_dir, params$donor_id, "_", mut_id,
+            params$output_dir, "/", params$donor_id, "_", mut_id,
             "_assigned_to_branches.tsv"
         ),
         quote = FALSE, row.names = FALSE, sep = "\t"
